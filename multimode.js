@@ -250,7 +250,7 @@ CodeMirror.yamlmixedMode = function( config ) {
         }],
         outerMode:   startMode,
         outerState:  startState,
-        innerMode:   {name: null},
+        innerMode:   pythonMode,  // This is awkward...
         innerState:  null,
         activeMode:  startMode,
         activeState: startState,
@@ -287,6 +287,7 @@ CodeMirror.yamlmixedMode = function( config ) {
     },
 
     token: function( stream, state ) {
+      console.log(state.activeMode.name, state.innerMode.name);
 
       // if yaml mode, search for start of python
       if ( state.activeMode.name === state.outerMode.name ) {
@@ -362,7 +363,7 @@ CodeMirror.yamlmixedMode = function( config ) {
         return tokenType;
 
       // if python mode, search for end of python
-      } else if ( state.activeMode.name === 'python' ) {
+      } else if ( state.activeMode.name === state.innerMode.name ) {
 
         let stopPython = false;
 
