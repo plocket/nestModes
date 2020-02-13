@@ -257,8 +257,6 @@ CodeMirror.yamlmixedMode = function( config ) {
         outerState:   startState,
         innerMode:    pythonMode,  // temp
         innerState:   null,
-        activeMode:   startMode,
-        activeState:  startState,
 
         isValidCodeBlock: false,
         hasPipe:          null,
@@ -279,8 +277,6 @@ CodeMirror.yamlmixedMode = function( config ) {
         outerState:   state.outerState,
         innerMode:    state.innerMode,
         innerState:   state.innerState,
-        activeMode:   state.activeMode,
-        activeState:  state.activeState,
 
         isValidCodeBlock: state.isValidCodeBlock,
         hasPipe:          state.hasPipe,
@@ -365,9 +361,8 @@ CodeMirror.yamlmixedMode = function( config ) {
             // var outerToken = outerMode.token(stream, state.outerState);
             // return outerToken;
             // ---
-            activeMode          = pythonMode;
-            state.activeState   = CodeMirror.startState( activeMode );
-            state.activeConfig  = { mode: activeMode, state: state.activeState }
+            state.activeConfig.mode = pythonMode;
+            state.activeConfig.state = CodeMirror.startState( state.activeConfig.mode );
           }  // ends if shouldStartPython
 
         }  // ends stages of takeoff
@@ -380,7 +375,7 @@ CodeMirror.yamlmixedMode = function( config ) {
         let stopPython = false;
 
         // Can't get `string.current` without getting the token
-        let tokenType = activeMode.token( stream, state.activeState );
+        let tokenType = activeMode.token( stream, state.activeConfig.state );
 
         // Any new line after a pipe that isn't indented enough isn't in
         // the code block anymore
@@ -396,9 +391,8 @@ CodeMirror.yamlmixedMode = function( config ) {
         }
 
         if ( stopPython ) {
-          activeMode          = yamlMode;
-          state.activeState   = CodeMirror.startState( activeMode );
-          state.activeConfig  = { mode: activeMode, state: state.activeState }
+          state.activeConfig.mode = yamlMode;
+          state.activeConfig.state = CodeMirror.startState( state.activeConfig.mode );
           // There was probably a way to do this without getting
           // the token, but string parsing is fragile
           stream.backUp( stream.current().length );  // Undo gobbling up this token.
