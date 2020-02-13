@@ -240,14 +240,16 @@ CodeMirror.yamlmixedMode = function( config ) {
     startState: function() {
 
       // if mode is string, make mode
-      let startMode  = starterConfig.mode,
-          startState = CodeMirror.startState( startMode );
+      let startMode   = starterConfig.mode,
+          startState  = CodeMirror.startState( startMode );
+      let outerConfig = {
+        ...starterConfig,
+        state: startState,
+      };
 
       let state = {
-        prevConfigs: [{
-          mode:   startMode,
-          state:  startState,
-        }],
+        prevConfigs: [],
+        outerConfig: outerConfig,
         outerMode:   startMode,
         outerState:  startState,
         innerMode:   startMode,
@@ -267,6 +269,7 @@ CodeMirror.yamlmixedMode = function( config ) {
 
       let newState = {
         prevConfigs: state.prevConfigs,
+        outerConfig: state.outerConfig,
         outerMode:   state.outerMode,
         outerState:  state.outerState,
         innerMode:   state.innerMode,
@@ -280,19 +283,21 @@ CodeMirror.yamlmixedMode = function( config ) {
         numIndentationSpaces: state.numIndentationSpaces,
       };
 
-      let mostRecent   = newState.prevConfigs[ newState.prevConfigs.length - 1 ];
-      mostRecent.state = CodeMirror.copyState( mostRecent.mode, mostRecent.state );
+      // let mostRecent   = newState.prevConfigs[ newState.prevConfigs.length - 1 ];
+      // mostRecent.state = CodeMirror.copyState( mostRecent.mode, mostRecent.state );
 
       return newState;
     },
 
     token: function( stream, state ) {
 
+      let outerConfig = state.outerConfig;
+
       // if yaml mode, search for start of python
       if ( state.activeMode.name === state.outerMode.name ) {
 
         // moves the parser forward
-        let tokenType = state.activeMode.token( stream, state.prevConfigs[ 0 ].state );
+        let tokenType = state.activeMode.token( stream, outerConfig.state );
         let tokenStr  = stream.current();
 
         let tokenIsAtom = atomTokenRegex.test( tokenType );
