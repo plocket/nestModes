@@ -267,9 +267,10 @@ CodeMirror.yamlmixedMode = function( config ) {
 
       let state = {
         prevConfigs: [],
-        outerConfig: outerConfig,
-        activeMode:  startMode,
-        activeState: startState,
+        outerConfig:  outerConfig,
+        activeConfig: outerConfig,
+        activeMode:   startMode,
+        activeState:  startState,
 
         closeKey:         null,
         isValidCodeBlock: false,
@@ -283,10 +284,11 @@ CodeMirror.yamlmixedMode = function( config ) {
     copyState: function( state ) {
 
       let newState = {
-        prevConfigs: state.prevConfigs,
-        outerConfig: state.outerConfig,
-        activeMode:  state.activeMode,
-        activeState: state.activeState,
+        prevConfigs:  state.prevConfigs,
+        outerConfig:  state.outerConfig,
+        activeConfig: state.activeConfig,
+        activeMode:   state.activeMode,
+        activeState:  state.activeState,
 
         closeKey:         state.closeKey,
         isValidCodeBlock: state.isValidCodeBlock,
@@ -373,8 +375,9 @@ CodeMirror.yamlmixedMode = function( config ) {
             // var outerToken = outerMode.token(stream, state.outerState);
             // return outerToken;
             // ---
-            state.activeMode  = pythonMode;
-            state.activeState = CodeMirror.startState( state.activeMode );
+            state.activeMode    = pythonMode;
+            state.activeState   = CodeMirror.startState( state.activeMode );
+            state.activeConfig  = configsObj[ 'python' ];
           }  // ends if shouldStartPython
 
         }  // ends stages of takeoff
@@ -382,7 +385,7 @@ CodeMirror.yamlmixedMode = function( config ) {
         return tokenType;
 
       // if python mode, search for end of python
-      } else if ( state.activeMode.name === 'python' ) {
+      } else if ( state.activeConfig.close && state.activeMode.name === 'python' ) {
 
         let stopPython = false;
 
