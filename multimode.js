@@ -258,10 +258,6 @@ CodeMirror.yamlmixedMode = function( config ) {
       let state = {
         prevConfigs: [],
         outerConfig: outerConfig,
-        outerMode:   startMode,
-        outerState:  startState,
-        innerMode:   startMode,
-        innerState:  startState,
         activeMode:  startMode,
         activeState: startState,
 
@@ -278,10 +274,6 @@ CodeMirror.yamlmixedMode = function( config ) {
       let newState = {
         prevConfigs: state.prevConfigs,
         outerConfig: state.outerConfig,
-        outerMode:   state.outerMode,
-        outerState:  state.outerState,
-        innerMode:   state.innerMode,
-        innerState:  state.innerState,
         activeMode:  state.activeMode,
         activeState: state.activeState,
 
