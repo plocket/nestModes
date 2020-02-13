@@ -387,7 +387,8 @@ CodeMirror.yamlmixedMode = function( config ) {
       // if python mode, search for end of python
       } else if ( state.activeConfig.close && state.activeMode.name === 'python' ) {
 
-        let stopPython = false;
+        let stopInner   = false;
+        let closeTester = state.activeConfig.close[ state.closeKey ];
 
         // Can't get `string.current` without getting the token
         let tokenType = state.activeMode.token( stream, state.activeState );
@@ -396,16 +397,16 @@ CodeMirror.yamlmixedMode = function( config ) {
         // the code block anymore
         if ( state.hasPipe === true ) {
           let isIndentedEnough = stream.indentation() > state.numIndentationSpaces;
-          if ( !isIndentedEnough ) stopPython = true;
+          if ( !isIndentedEnough ) stopInner = true;
 
         // Else, one-liner python should stop at the end of the line
         } else if ( state.hasPipe === false ) {
-          if ( stream.eol()) stopPython = true;
+          if ( stream.eol()) stopInner = true;
           // Don't have to worry about alerting the police of wrong indendation on next line.
           // If next line is indented incorrectly, yaml won't like it either
         }
 
-        if ( stopPython ) {
+        if ( stopInner ) {
           state.activeMode        = outerConfig.mode;
           state.activeState       = CodeMirror.startState( state.activeMode );
           // There was probably a way to do this without getting
