@@ -51,11 +51,15 @@ let config = {
     yaml: {
       mode: CodeMirror.getMode( {}, 'yaml' ),
       open: {
+        innerModeName: 'python',
         // Map?
         code: {  // needs key name?
         // python: {
           mode:               null,  // mode here or bottom level of nesting?
           tokenType:          'atom',
+          // Just use the key of the parent? Or will they need
+          // to use the same type multiple times?
+          closeKey:           null,
           wholeStringSearch:  null,
           tokenStringSearch:  function ( stream, state ) {
             let currString  = stream.current();
@@ -71,6 +75,7 @@ let config = {
             withPipe: {
               mode:               null,  // mode here or bottom level of nesting?
               tokenType:          null,
+              closeKey:           null,
               wholeStringSearch:  /^\s*code\s*:\s+\|\s*$/,
               tokenStringSearch:  null,
               nextTestToLoopThrough: {
@@ -85,9 +90,9 @@ let config = {
                 // needed?
                 // Also, only loop for tokenStringSearch or tokenType?
                 withPipe: {
-                  delimeterStyle:     null,
                   mode:               CodeMirror.getMode( {}, 'python' ),  // mode here or bottom level of nesting?
                   tokenType:          'meta',
+                  closeKey:           'withPipe',
                   wholeStringSearch:  null,
                   tokenStringSearch:  /\s*\|\s*/,
                   nextTestToLoopThrough: null,
@@ -95,16 +100,16 @@ let config = {
               },  // ends .next
             },
             withPipeAndComment: {
-              delimeterStyle:     null,
               mode:               null,  // mode here or bottom level of nesting?
               tokenType:          null,
+              closeKey:           null,
               wholeStringSearch:  /^\s*code\s*:\s+\|\s*#.*$/,
               tokenStringSearch:  null,
               nextTestToLoopThrough: {
                 withPipeAndComment: {
-                  delimeterStyle:     null,
                   mode:               CodeMirror.getMode( {}, 'python' ),  // mode here or bottom level of nesting?
                   tokenType:          null,
+                  closeKey:           'withPipeAndComment',
                   wholeStringSearch:  '\n',
                   tokenStringSearch:  null,  // Allow '\n' here too?
                   nextTestToLoopThrough: null,
@@ -112,14 +117,16 @@ let config = {
               },  // ends .next
             },
             noPipe: {
+              mode:               null,
               tokenType:          null,
+              closeKey:           null,
               wholeStringSearch:  /^\s*code\s*:\s+[^\|][\s\S]+$/,
               tokenStringSearch:  null,
               nextTestToLoopThrough: {
                 noPipe: {
-                  delimeterStyle:     null,
                   mode:               CodeMirror.getMode( {}, 'python' ),  // mode here or bottom level of nesting?
                   tokenType:          'meta',
+                  closeKey:           'noPipe',
                   wholeStringSearch:  null,
                   tokenStringSearch:  /\s*:\s*/,
                   nextTestToLoopThrough: null,
@@ -129,6 +136,9 @@ let config = {
           }  // ends `.next` sub-type ('code' atom)
         },  // ends `.code` type
       },  // ends open
+    },  // ends yaml
+    python: {
+      mode: CodeMirror.getMode( {}, 'python' ),
       close: {
         // // Needed? Or just go for the deepest nesting?
         // code: {
@@ -172,8 +182,8 @@ let config = {
           nextTestToLoopThrough: null,
         },
       },  // ends close
-    },
-  },  // ends yaml
+    },  // ends python
+  },  // ends configsObj
 };  // ends config
 
 // fyi
@@ -242,7 +252,7 @@ CodeMirror.yamlmixedMode = function( config ) {
 
   let configsObj    = config.configsObj,
       starterConfig = configsObj[ configsObj.starterName ],
-      devState      = config.state;
+      devState      = config.state;  // will matter later
 
   return {
     startState: function() {
