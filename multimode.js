@@ -240,20 +240,25 @@ CodeMirror.yamlmixedMode = function( config ) {
     startState: function() {
 
       // if mode is string, make mode
-      let startMode  = starterConfig.mode,
-          startState = CodeMirror.startState( startMode );
+      let startMode   = starterConfig.mode,
+          startState  = CodeMirror.startState( startMode ),
+          prevConfigs = [{
+            mode:   startMode,
+            state:  startState,
+          }],
+          outerConfig = prevConfigs[ 0 ];
 
       let state = {
-        prevConfigs: [{
-          mode:   startMode,
-          state:  startState,
-        }],
-        outerMode:   startMode,
-        outerState:  startState,
-        innerMode:   pythonMode,  // This is awkward...
-        innerState:  null,
-        activeMode:  startMode,
-        activeState: startState,
+        prevConfigs:  prevConfigs,
+        outerConfig:  outerConfig,
+        innerConfig:  { mode: pythonMode, state: null },
+        activeConfig: outerConfig,
+        outerMode:    startMode,
+        outerState:   startState,
+        innerMode:    pythonMode,  // temp
+        innerState:   null,
+        activeMode:   startMode,
+        activeState:  startState,
 
         isValidCodeBlock: false,
         hasPipe:          null,
@@ -266,13 +271,16 @@ CodeMirror.yamlmixedMode = function( config ) {
     copyState: function( state ) {
 
       let newState = {
-        prevConfigs: state.prevConfigs,
-        outerMode:   state.outerMode,
-        outerState:  state.outerState,
-        innerMode:   state.innerMode,
-        innerState:  state.innerState,
-        activeMode:  state.activeMode,
-        activeState: state.activeState,
+        prevConfigs:  state.prevConfigs,
+        outerConfig:  state.outerConfig,
+        innerConfig:  state.innerConfig,
+        activeConfig: state.activeConfig,
+        outerMode:    state.outerMode,
+        outerState:   state.outerState,
+        innerMode:    state.innerMode,
+        innerState:   state.innerState,
+        activeMode:   state.activeMode,
+        activeState:  state.activeState,
 
         isValidCodeBlock: state.isValidCodeBlock,
         hasPipe:          state.hasPipe,
@@ -287,13 +295,16 @@ CodeMirror.yamlmixedMode = function( config ) {
     },
 
     token: function( stream, state ) {
-      console.log(state.activeMode.name, state.innerMode.name);
+
+      let outerConfig = state.outerConfig;
+      let outerMode   = outerConfig.mode;
+      let activeMode  = state.activeConfig.mode
 
       // if yaml mode, search for start of python
-      if ( state.activeMode.name === state.outerMode.name ) {
+      if ( activeMode.name === outerMode.name ) {
 
         // moves the parser forward
-        let tokenType = state.activeMode.token( stream, state.prevConfigs[ 0 ].state );
+        let tokenType = activeMode.token( stream, state.prevConfigs[ 0 ].state );
         let tokenStr  = stream.current();
 
         let tokenIsAtom = atomTokenRegex.test( tokenType );
@@ -354,8 +365,9 @@ CodeMirror.yamlmixedMode = function( config ) {
             // var outerToken = outerMode.token(stream, state.outerState);
             // return outerToken;
             // ---
-            state.activeMode  = pythonMode;
-            state.activeState = CodeMirror.startState( state.activeMode );
+            activeMode          = pythonMode;
+            state.activeState   = CodeMirror.startState( activeMode );
+            state.activeConfig  = { mode: activeMode, state: state.activeState }
           }  // ends if shouldStartPython
 
         }  // ends stages of takeoff
@@ -363,12 +375,12 @@ CodeMirror.yamlmixedMode = function( config ) {
         return tokenType;
 
       // if python mode, search for end of python
-      } else if ( state.activeMode.name === state.innerMode.name ) {
+      } else if ( activeMode.name === state.innerMode.name ) {
 
         let stopPython = false;
 
         // Can't get `string.current` without getting the token
-        let tokenType = state.activeMode.token( stream, state.activeState );
+        let tokenType = activeMode.token( stream, state.activeState );
 
         // Any new line after a pipe that isn't indented enough isn't in
         // the code block anymore
@@ -384,8 +396,9 @@ CodeMirror.yamlmixedMode = function( config ) {
         }
 
         if ( stopPython ) {
-          state.activeMode        = yamlMode;
-          state.activeState       = CodeMirror.startState( state.activeMode );
+          activeMode          = yamlMode;
+          state.activeState   = CodeMirror.startState( activeMode );
+          state.activeConfig  = { mode: activeMode, state: state.activeState }
           // There was probably a way to do this without getting
           // the token, but string parsing is fragile
           stream.backUp( stream.current().length );  // Undo gobbling up this token.
