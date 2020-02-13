@@ -251,12 +251,8 @@ CodeMirror.yamlmixedMode = function( config ) {
       let state = {
         prevConfigs:  prevConfigs,
         outerConfig:  outerConfig,
-        innerConfig:  { mode: pythonMode, state: null },
+        innerConfig:  { mode: pythonMode, state: null },  // temp
         activeConfig: outerConfig,
-        outerMode:    startMode,
-        outerState:   startState,
-        innerMode:    pythonMode,  // temp
-        innerState:   null,
 
         isValidCodeBlock: false,
         hasPipe:          null,
@@ -273,10 +269,6 @@ CodeMirror.yamlmixedMode = function( config ) {
         outerConfig:  state.outerConfig,
         innerConfig:  state.innerConfig,
         activeConfig: state.activeConfig,
-        outerMode:    state.outerMode,
-        outerState:   state.outerState,
-        innerMode:    state.innerMode,
-        innerState:   state.innerState,
 
         isValidCodeBlock: state.isValidCodeBlock,
         hasPipe:          state.hasPipe,
@@ -294,7 +286,8 @@ CodeMirror.yamlmixedMode = function( config ) {
 
       let outerConfig = state.outerConfig;
       let outerMode   = outerConfig.mode;
-      let activeMode  = state.activeConfig.mode
+      let innerMode   = state.innerConfig.mode;
+      let activeMode  = state.activeConfig.mode;
 
       // if yaml mode, search for start of python
       if ( activeMode.name === outerMode.name ) {
@@ -370,7 +363,7 @@ CodeMirror.yamlmixedMode = function( config ) {
         return tokenType;
 
       // if python mode, search for end of python
-      } else if ( activeMode.name === state.innerMode.name ) {
+      } else if ( activeMode.name === innerMode.name ) {
 
         let stopPython = false;
 
