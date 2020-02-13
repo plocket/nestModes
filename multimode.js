@@ -294,11 +294,11 @@ CodeMirror.yamlmixedMode = function( config ) {
       let outerConfig = state.outerConfig;
 
       // if yaml mode, search for start of python
-      if ( state.activeMode.name === state.outerMode.name ) {
+      if ( state.activeMode.name === outerConfig.mode.name ) {
 
         // moves the parser forward
-        let tokenType = state.activeMode.token( stream, outerConfig.state );
-        let tokenStr  = stream.current();
+        let tokenType   = state.activeMode.token( stream, state.activeState );
+        let tokenStr    = stream.current();
 
         let tokenIsAtom = atomTokenRegex.test( tokenType );
         let tokenIsMeta = metaTokenRegex.test( tokenType );
@@ -388,7 +388,7 @@ CodeMirror.yamlmixedMode = function( config ) {
         }
 
         if ( stopPython ) {
-          state.activeMode        = yamlMode;
+          state.activeMode        = outerConfig.mode;
           state.activeState       = CodeMirror.startState( state.activeMode );
           // There was probably a way to do this without getting
           // the token, but string parsing is fragile
