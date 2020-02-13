@@ -201,6 +201,14 @@ CodeMirror.defineMode( "yamlmixed", function(){
 });
 
 
+/*
+  move towards:
+  if activeConfig.open
+    flag if it needs to open
+
+  if not needs to open
+    run through the closing stuff
+*/
 CodeMirror.yamlmixedMode = function( config ) {
 
   let yamlMode    = CodeMirror.getMode( {}, 'yaml' );
