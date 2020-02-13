@@ -271,6 +271,7 @@ CodeMirror.yamlmixedMode = function( config ) {
         activeMode:  startMode,
         activeState: startState,
 
+        closeKey:         null,
         isValidCodeBlock: false,
         hasPipe:          null,
         hasComment:       null,
@@ -287,6 +288,7 @@ CodeMirror.yamlmixedMode = function( config ) {
         activeMode:  state.activeMode,
         activeState: state.activeState,
 
+        closeKey:         state.closeKey,
         isValidCodeBlock: state.isValidCodeBlock,
         hasPipe:          state.hasPipe,
         hasComment:       state.hasComment,
@@ -321,17 +323,20 @@ CodeMirror.yamlmixedMode = function( config ) {
           // Do these need to be lazy
           // Test if valid code block declaration and remember if has pipe or not
           if ( withPipeRegex.test( wholeLineStr )) {
-            state.hasPipe          = true;
-            state.hasComment       = false;
-            state.isValidCodeBlock = true;
+            state.closeKey          = 'withPipe';
+            state.hasPipe           = true;
+            state.hasComment        = false;
+            state.isValidCodeBlock  = true;
           } else if ( withPipeAndCommentRegex.test( wholeLineStr )) {
-            state.hasPipe          = true;
-            state.hasComment       = true;
-            state.isValidCodeBlock = true;
+            state.closeKey          = 'withPipeAndComment';
+            state.hasPipe           = true;
+            state.hasComment        = true;
+            state.isValidCodeBlock  = true;
           } else if ( noPipeRegex.test( wholeLineStr )) {
-            state.hasPipe          = false;
-            state.hasComment       = null;
-            state.isValidCodeBlock = true;
+            state.closeKey          = 'noPipe';
+            state.hasPipe           = false;
+            state.hasComment        = null;
+            state.isValidCodeBlock  = true;
           }
 
           // Remember num chars of indentation
