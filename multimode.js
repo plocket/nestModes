@@ -250,8 +250,8 @@ CodeMirror.yamlmixedMode = function( config ) {
         }],
         outerMode:   startMode,
         outerState:  startState,
-        innerMode:   startMode,
-        innerState:  startState,
+        innerMode:   {name: null},
+        innerState:  null,
         activeMode:  startMode,
         activeState: startState,
 
