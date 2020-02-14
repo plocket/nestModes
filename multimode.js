@@ -40,7 +40,6 @@ from inner mode
 
 // How can this deal with checking things like indentation?
 let indentation = 0; // or
-let closeRegex = null;
 
 let config = {
   state: { indentation: 0 },
@@ -60,7 +59,7 @@ let config = {
           // Just use the key of the parent? Or will they need
           // to use the same type multiple times?
           closeKey:           null,
-          wholeStringSearch:  null,
+          wholeLineSearch:    null,
           tokenStringSearch:  function ( stream, state ) {
             let currString  = stream.current();
             let wasFound    = /\s*code/.test( currString );
@@ -76,7 +75,7 @@ let config = {
               mode:               null,  // mode here or bottom level of nesting?
               tokenType:          null,
               closeKey:           null,
-              wholeStringSearch:  /^\s*code\s*:\s+\|\s*$/,
+              wholeLineSearch:    /^\s*code\s*:\s+\|\s*$/,
               tokenStringSearch:  null,
               nextTestToLoopThrough: {
                 // What about: ifNotFound: 'end'/'invalid', 'loop' (to the end of the line)
@@ -93,7 +92,7 @@ let config = {
                   mode:               CodeMirror.getMode( {}, 'python' ),  // mode here or bottom level of nesting?
                   tokenType:          'meta',
                   closeKey:           'withPipe',
-                  wholeStringSearch:  null,
+                  wholeLineSearch:    null,
                   tokenStringSearch:  /\s*\|\s*/,
                   nextTestToLoopThrough: null,
                 },
@@ -103,14 +102,14 @@ let config = {
               mode:               null,  // mode here or bottom level of nesting?
               tokenType:          null,
               closeKey:           null,
-              wholeStringSearch:  /^\s*code\s*:\s+\|\s*#.*$/,
+              wholeLineSearch:    /^\s*code\s*:\s+\|\s*#.*$/,
               tokenStringSearch:  null,
               nextTestToLoopThrough: {
                 withPipeAndComment: {
                   mode:               CodeMirror.getMode( {}, 'python' ),  // mode here or bottom level of nesting?
                   tokenType:          null,
                   closeKey:           'withPipeAndComment',
-                  wholeStringSearch:  '\n',
+                  wholeLineSearch:    '\n',
                   tokenStringSearch:  null,  // Allow '\n' here too?
                   nextTestToLoopThrough: null,
                 },
@@ -120,14 +119,14 @@ let config = {
               mode:               null,
               tokenType:          null,
               closeKey:           null,
-              wholeStringSearch:  /^\s*code\s*:\s+[^\|][\s\S]+$/,
+              wholeLineSearch:    /^\s*code\s*:\s+[^\|][\s\S]+$/,
               tokenStringSearch:  null,
               nextTestToLoopThrough: {
                 noPipe: {
                   mode:               CodeMirror.getMode( {}, 'python' ),  // mode here or bottom level of nesting?
                   tokenType:          'meta',
                   closeKey:           'noPipe',
-                  wholeStringSearch:  null,
+                  wholeLineSearch:    null,
                   tokenStringSearch:  /\s*:\s*/,
                   nextTestToLoopThrough: null,
                 },
@@ -143,42 +142,42 @@ let config = {
         // // Needed? Or just go for the deepest nesting?
         // code: {
         //   openType: 'code',  // Needed?
-        //   wholeStringSearch: /\*/,
+        //   wholeLineSearch: /\*/,
         //   next: 
         // },  // ends close types
         withPipe: {
-          openType:           'withPipe',  // Needed?
+          openType:        'withPipe',  // Needed?
           // Can't use `this` in an object
-          // wholeStringSearch:  new RegExp(`^\s{0,${this.state.indentation}}\S`),  // or
-          // wholeStringSearch:  this.state.closeRegex,
-          wholeStringSearch:  new RegExp(`^\\s{0,${indentation}}\\S`),  // or
-          wholeStringSearch:  closeRegex,
+          wholeLineSearch: function ( stream, token, state ) {
+            return new RegExp(`^\\s{0,${indentation}}\\S`);
+          },
           // Will require the module code to track how many chars to back up
           // to. Will it require going back multiple lines? If so, how?
           // How can the coder indicate what part of this process needs
           // to be backed up?
-          shouldBackUp:       true,
+          shouldBackUp:    true,
           nextTestToLoopThrough: null,
         },
         withPipeAndComment: {
-          openType:           'withPipeAndComment',  // Needed?
-          wholeStringSearch:  new RegExp(`^\\s{0,${indentation}}\\S`),  // or
-          wholeStringSearch:  closeRegex,
+          openType:        'withPipeAndComment',  // Needed?
+          wholeLineSearch: function ( stream, token, state ) {
+            return new RegExp(`^\\s{0,${indentation}}\\S`);
+          },
           // Will require the module code to track how many chars to back up
           // to. Will it require going back multiple lines? If so, how?
           // How can the coder indicate what part of this process needs
           // to be backed up?
-          shouldBackUp:       true,
+          shouldBackUp:     true,
           nextTestToLoopThrough: null,
         },
         noPipe: {
-          openType:           'noPipe',  // Needed?
-          wholeStringSearch:  '\n',
+          openType:         'noPipe',  // Needed?
+          wholeLineSearch:  /^\n/,
           // Will require the module code to track how many chars to back up
           // to. Will it require going back multiple lines? If so, how?
           // How can the coder indicate what part of this process needs
           // to be backed up?
-          shouldBackUp:       true,
+          shouldBackUp:     true,
           nextTestToLoopThrough: null,
         },
       },  // ends close
@@ -247,7 +246,7 @@ CodeMirror.yamlmixedMode = function( config ) {
   // code: |       
   // If doesn't have pipe, can have code on the same line.
   let noPipeRegex = /^\s*code\s*:\s+[^\|][\s\S]+$/;
-  let pipeRegex      = /\|/;
+  let pipeRegex   = /\|/;
 
 
   let configsObj    = config.configsObj,
@@ -328,21 +327,18 @@ CodeMirror.yamlmixedMode = function( config ) {
             state.hasComment        = false;
             state.isValidCodeBlock  = true;
             indentation = stream.indentation();
-            closeRegex = new RegExp(`^\\s{0,${indentation}}\\S`);
           } else if ( withPipeAndCommentRegex.test( wholeLineStr )) {
             state.closeKey          = 'withPipeAndComment';
             state.hasPipe           = true;
             state.hasComment        = true;
             state.isValidCodeBlock  = true;
             indentation = stream.indentation();
-            closeRegex = new RegExp(`^\\s{0,${indentation}}\\S`);
           } else if ( noPipeRegex.test( wholeLineStr )) {
             state.closeKey          = 'noPipe';
             state.hasPipe           = false;
             state.hasComment        = null;
             state.isValidCodeBlock  = true;
             indentation = null;
-            closeRegex = new RegExp(`^\\n`);
           }
 
           // if it's a valid code block, we'll know to
@@ -388,11 +384,18 @@ CodeMirror.yamlmixedMode = function( config ) {
       } else if ( state.activeConfig.close && state.activeMode.name === 'python' ) {
 
         let stopInner   = false;
-        let closeConfig = state.activeConfig.close
-        let closeTester = closeRegex; // closeConfig[ state.closeKey ];
-
         // Can't get `string.current` without getting the token
         let tokenType = state.activeMode.token( stream, state.activeState );
+
+        let closeConfig = state.activeConfig.close
+        let closeTester = closeConfig[ state.closeKey ].wholeLineSearch;
+
+        if ( typeof closeTester === 'function' ) {
+          // Give them our stream, the token, and their state
+          closeTester = closeTester( stream, tokenType, config.state );
+          // todo: allow them to run their own test instead of
+          // returning regex or string? Check for bool?
+        }
         
         // Can be flipped back and forth between RegExp and
         // string with no problems. Weird
@@ -406,9 +409,12 @@ CodeMirror.yamlmixedMode = function( config ) {
           if ( stream.eol() ) stopInner = true;
   
         } else {
+          // Handle closeTester that is a string instead of
+          // a regexp. Have to escape it properly.
+
           // Otherwise match the closing case normally
           let wholeLineStr  = stream.string;
-          stopInner = closeRegex.test( wholeLineStr );
+          stopInner = closeTester.test( wholeLineStr );
 
         }
 
