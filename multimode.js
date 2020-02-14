@@ -9,6 +9,11 @@
 })(function(CodeMirror) {
 "use strict";
 
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
+let toEscape = /[.*+\-?^${}()|[\]\\]/g;
+function escapeRegExp( string ) {
+  return string.replace( toEscape, '\\$&' ); // $& means the whole matched string
+}
 
 /*
 1. Can take functions that will be given:
@@ -172,7 +177,7 @@ let config = {
         },
         noPipe: {
           openType:         'noPipe',  // Needed?
-          wholeLineSearch:  /^\n/,
+          wholeLineSearch:  "\n",
           // Will require the module code to track how many chars to back up
           // to. Will it require going back multiple lines? If so, how?
           // How can the coder indicate what part of this process needs
@@ -397,16 +402,29 @@ CodeMirror.yamlmixedMode = function( config ) {
         let closeConfig = state.activeConfig.close
         let closeTester = closeConfig[ state.closeKey ].wholeLineSearch;
 
+        // Give them their state too
         if ( typeof closeTester === 'function' ) {
-          // Give them their state too
           closeTester = closeTester( stream, tokenType, config.state );
           // todo: allow them to run their own test instead of
           // returning regex or string? Check for bool?
         }
+
+        // Turn strings into a regular expression with proper escaping.
+        // Not sure about this. What if they've made an already escaped string?
+        // Should this really be handled? But then why wouldn't they have just
+        // made it regex? Leave it for the docs?
+        // TODO: handle bool too?
+        if ( typeof closeTester === 'string' ) {
+          closeTester = escapeRegExp( closeTester );
+          closeTester = new RegExp( closeTester );
+        }
         
+        // Now get a string. I know, I know. But this is the
+        // easiest way I've found to test these various cases.
         // Can be flipped back and forth between RegExp and
-        // string with no problems. Weird
-        let testerStr = closeTester.toString()
+        // string with no problems. Weird. Anyway, have to turn
+        // this to a string to test its new-line-ness.
+        let testerStr = closeTester.toString();
         // Deal with the idea of new line searchers
         // considering codemirror evaluates one line at a time.
         // How to make sure there's nothing after the new line, etc?
@@ -416,15 +434,10 @@ CodeMirror.yamlmixedMode = function( config ) {
           if ( stream.eol() ) closeInner = true;
   
         } else {
-          // Handle closeTester that is a string instead of
-          // a regexp. Have to escape it properly.
-
           // Otherwise match the closing case normally
           let wholeLineStr  = stream.string;
           closeInner        = closeTester.test( wholeLineStr );
-
         }
-
 
         if ( closeInner ) {
           state.activeMode        = outerConfig.mode;
