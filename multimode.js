@@ -329,26 +329,23 @@ CodeMirror.yamlmixedMode = function( config ) {
             state.hasPipe           = true;
             state.hasComment        = false;
             state.isValidCodeBlock  = true;
+            indentation = stream.indentation();
             closeRegex = new RegExp(`^\\s{0,${indentation}}\\S`);
           } else if ( withPipeAndCommentRegex.test( wholeLineStr )) {
             state.closeKey          = 'withPipeAndComment';
             state.hasPipe           = true;
             state.hasComment        = true;
             state.isValidCodeBlock  = true;
+            indentation = stream.indentation();
             closeRegex = new RegExp(`^\\s{0,${indentation}}\\S`);
           } else if ( noPipeRegex.test( wholeLineStr )) {
-            console.log('noPipe', stream.current(), ',', stream.string);
             state.closeKey          = 'noPipe';
             state.hasPipe           = false;
             state.hasComment        = null;
             state.isValidCodeBlock  = true;
+            indentation = null;
             closeRegex = new RegExp(`^\\n`);
           }
-
-          // Remember num chars of indentation
-          // Accounts for spaces vs. tabs (converts to spaces)
-          if ( state.isValidCodeBlock ) state.numIndentationSpaces = stream.indentation();
-          indentation = state.numIndentationSpaces;
 
           // if it's a valid code block, we'll know to
           // start python after meta tokens pass by
@@ -399,17 +396,24 @@ CodeMirror.yamlmixedMode = function( config ) {
         // Can't get `string.current` without getting the token
         let tokenType = state.activeMode.token( stream, state.activeState );
         
+        // Can be flipped back and forth between RegExp and
+        // string with no problems. Weird
         let testerStr = closeTester.toString()
+        // Deal with the idea of new line searchers
+        // considering codemirror evaluates one line at a time.
+        // How to make sure there's nothing after the new line, etc?
+        // i.e. ^\n or \n$ are fine, but if they do \nxyz then
+        // there's more checking to do. todo.
         if ( /\\n/.test( testerStr ) || /\n/.test( testerStr )) {
           if ( stream.eol() ) stopInner = true;
+  
+        } else {
+          // Otherwise match the closing case normally
+          let wholeLineStr  = stream.string;
+          stopInner = closeRegex.test( wholeLineStr );
+
         }
 
-        // Any new line after a pipe that isn't indented enough isn't in
-        // the code block anymore
-        if ( state.hasPipe === true ) {
-          let isIndentedEnough = stream.indentation() > state.numIndentationSpaces;
-          if ( !isIndentedEnough ) stopInner = true;
-        }
 
         if ( stopInner ) {
           state.activeMode        = outerConfig.mode;
