@@ -391,7 +391,7 @@ CodeMirror.yamlmixedMode = function( config ) {
         let closeTester = closeConfig[ state.closeKey ].wholeLineSearch;
 
         if ( typeof closeTester === 'function' ) {
-          // Give them our stream, the token, and their state
+          // Give them their state too
           closeTester = closeTester( stream, tokenType, config.state );
           // todo: allow them to run their own test instead of
           // returning regex or string? Check for bool?
@@ -430,6 +430,7 @@ CodeMirror.yamlmixedMode = function( config ) {
           state.isValidCodeBlock  = false;
           state.hasPipe           = null;
           state.hasComment        = null;
+          state.closeKey          = null;
         }
 
         // If stopping python, `tokenType` won't matter because
