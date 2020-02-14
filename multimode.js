@@ -383,10 +383,10 @@ CodeMirror.yamlmixedMode = function( config ) {
       // if python mode, search for end of python
       } else if ( state.activeConfig.close && state.activeMode.name === 'python' ) {
 
-        let stopInner   = false;
-        // Can't get `string.current` without getting the token
-        let tokenType = state.activeMode.token( stream, state.activeState );
+        let closeInner  = false;
 
+        // Can't get `string.current` without getting the token
+        let tokenType   = state.activeMode.token( stream, state.activeState );
         let closeConfig = state.activeConfig.close
         let closeTester = closeConfig[ state.closeKey ].wholeLineSearch;
 
@@ -406,7 +406,7 @@ CodeMirror.yamlmixedMode = function( config ) {
         // i.e. ^\n or \n$ are fine, but if they do \nxyz then
         // there's more checking to do. todo.
         if ( /\\n/.test( testerStr ) || /\n/.test( testerStr )) {
-          if ( stream.eol() ) stopInner = true;
+          if ( stream.eol() ) closeInner = true;
   
         } else {
           // Handle closeTester that is a string instead of
@@ -414,12 +414,12 @@ CodeMirror.yamlmixedMode = function( config ) {
 
           // Otherwise match the closing case normally
           let wholeLineStr  = stream.string;
-          stopInner = closeTester.test( wholeLineStr );
+          closeInner        = closeTester.test( wholeLineStr );
 
         }
 
 
-        if ( stopInner ) {
+        if ( closeInner ) {
           state.activeMode        = outerConfig.mode;
           state.activeState       = CodeMirror.startState( state.activeMode );
           // There was probably a way to do this without getting
