@@ -54,7 +54,7 @@ let config = {
     // delimeterStyle: null,
     yaml: {
       mode: CodeMirror.getMode( {}, 'yaml' ),
-      open: {
+      openers: {
         innerModeName: 'python',
         // Map?
         code: {  // needs key name?
@@ -136,20 +136,20 @@ let config = {
                   nextTestToLoopThrough: null,
                 },
               },  // ends .next
-            },  // ends `.noPipe` open sub-type
+            },  // ends `.noPipe` openers sub-type
           }  // ends `.next` sub-type ('code' atom)
         },  // ends `.code` type
-      },  // ends open
+      },  // ends openers
     },  // ends yaml
     python: {
-      mode: CodeMirror.getMode( {}, 'python' ),
-      close: {
+      mode:    CodeMirror.getMode( {}, 'python' ),
+      closers: {
         // // Needed? Or just go for the deepest nesting?
         // code: {
         //   openType: 'code',  // Needed?
         //   wholeLineSearch: /\*/,
         //   next: 
-        // },  // ends close types
+        // },  // ends closers types
         withPipe: {
           openType:        'withPipe',  // Needed?
           // Can't use `this` in an object
@@ -185,7 +185,7 @@ let config = {
           shouldBackUp:     true,
           nextTestToLoopThrough: null,
         },
-      },  // ends close
+      },  // ends closers
     },  // ends python
   },  // ends configsObj
 };  // ends config
@@ -217,11 +217,11 @@ CodeMirror.defineMode( "yamlmixed", function(){
 
 /*
   move towards:
-  if activeConfig.open
+  if activeConfig.openers
     flag if it needs to open
 
   if not needs to open
-    if activeConfig.close
+    if activeConfig.closers
       run through the closing stuff
 */
 CodeMirror.yamlmixedMode = function( config ) {
@@ -318,12 +318,14 @@ CodeMirror.yamlmixedMode = function( config ) {
       let outerConfig   = state.outerConfig;
       let activeConfig  = state.activeConfig
 
-      // if yaml mode, search for start of python
-      if ( activeConfig.open ) {
+      // Look for modes to open
+      if ( activeConfig.openers ) {
 
         // moves the parser forward
-        let tokenType   = state.activeMode.token( stream, state.activeState );
-        let tokenStr    = stream.current();
+        let tokenType     = state.activeMode.token( stream, state.activeState );
+        let tokenStr      = stream.current();
+        let wholeLineStr  = stream.string;
+
 
         let tokenIsAtom = atomTokenRegex.test( tokenType );
         let tokenIsMeta = metaTokenRegex.test( tokenType );
@@ -395,13 +397,13 @@ CodeMirror.yamlmixedMode = function( config ) {
         return tokenType;
 
       // if python mode, search for end of python
-      } else if ( activeConfig.close ) {
+      } else if ( activeConfig.closers ) {
 
         let closeInner  = false;
 
         // Can't get `string.current` without getting the token
         let tokenType   = state.activeMode.token( stream, state.activeState );
-        let closeConfig = activeConfig.close
+        let closeConfig = activeConfig.closers
         let closeTester = closeConfig[ state.closeKey ].wholeLineSearch;
 
         // Give them their state too
