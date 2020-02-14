@@ -276,7 +276,6 @@ CodeMirror.yamlmixedMode = function( config ) {
         isValidCodeBlock: false,
         hasPipe:          null,
         hasComment:       null,
-        numIndentationSpaces: null,
       };
       return state;
     },
@@ -294,7 +293,6 @@ CodeMirror.yamlmixedMode = function( config ) {
         isValidCodeBlock: state.isValidCodeBlock,
         hasPipe:          state.hasPipe,
         hasComment:       state.hasComment,
-        numIndentationSpaces: state.numIndentationSpaces,
       };
 
       // let mostRecent   = newState.prevConfigs[ newState.prevConfigs.length - 1 ];
@@ -423,7 +421,6 @@ CodeMirror.yamlmixedMode = function( config ) {
           stream.backUp( stream.current().length );  // Undo gobbling up this token.
 
           // Reset everything for the next go around.
-          state.numIndentationSpaces = null;
           state.isValidCodeBlock  = false;
           state.hasPipe           = null;
           state.hasComment        = null;
