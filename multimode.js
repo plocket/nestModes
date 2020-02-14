@@ -281,12 +281,19 @@ CodeMirror.yamlmixedMode = function( config ) {
 
     copyState: function( state ) {
 
+      // Not sure why this stuff is necessary, but multiplex.js
+      // does it, and that was written by someone who knows
+      let outer     = state.outerConfig;
+      outer.state   = CodeMirror.copyState( outer.mode, outer.state );
+      let active    = state.activeConfig;
+      active.state  = CodeMirror.copyState( active.mode, active.state );
+
       let newState = {
         prevConfigs:  state.prevConfigs,
-        outerConfig:  state.outerConfig,
-        activeConfig: state.activeConfig,
+        outerConfig:  outer,
+        activeConfig: active,
         activeMode:   state.activeMode,
-        activeState:  state.activeState,
+        activeState:  CodeMirror.copyState( state.activeMode, state.activeState ),
 
         closeKey:         state.closeKey,
         isValidCodeBlock: state.isValidCodeBlock,
