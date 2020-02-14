@@ -66,7 +66,7 @@ let config = {
             let wasFound    = /\s*code/.test( currString );
             if ( wasFound ) indentation = stream.indentation();
             // or
-            if ( wasFound ) closeRegex = new RegExp(`^\s{0,${indentation}}\S`);
+            if ( wasFound ) closeRegex = new RegExp(`^\\s{0,${indentation}}\\S`);
             // or if we're doing this as a class
             if ( wasFound ) state.indentation = stream.indentation();
             return wasFound;
@@ -151,7 +151,7 @@ let config = {
           // Can't use `this` in an object
           // wholeStringSearch:  new RegExp(`^\s{0,${this.state.indentation}}\S`),  // or
           // wholeStringSearch:  this.state.closeRegex,
-          wholeStringSearch:  new RegExp(`^\s{0,${indentation}}\S`),  // or
+          wholeStringSearch:  new RegExp(`^\\s{0,${indentation}}\\S`),  // or
           wholeStringSearch:  closeRegex,
           // Will require the module code to track how many chars to back up
           // to. Will it require going back multiple lines? If so, how?
@@ -162,7 +162,7 @@ let config = {
         },
         withPipeAndComment: {
           openType:           'withPipeAndComment',  // Needed?
-          wholeStringSearch:  new RegExp(`^\s{0,${indentation}}\S`),  // or
+          wholeStringSearch:  new RegExp(`^\\s{0,${indentation}}\\S`),  // or
           wholeStringSearch:  closeRegex,
           // Will require the module code to track how many chars to back up
           // to. Will it require going back multiple lines? If so, how?
@@ -329,21 +329,26 @@ CodeMirror.yamlmixedMode = function( config ) {
             state.hasPipe           = true;
             state.hasComment        = false;
             state.isValidCodeBlock  = true;
+            closeRegex = new RegExp(`^\\s{0,${indentation}}\\S`);
           } else if ( withPipeAndCommentRegex.test( wholeLineStr )) {
             state.closeKey          = 'withPipeAndComment';
             state.hasPipe           = true;
             state.hasComment        = true;
             state.isValidCodeBlock  = true;
+            closeRegex = new RegExp(`^\\s{0,${indentation}}\\S`);
           } else if ( noPipeRegex.test( wholeLineStr )) {
+            console.log('noPipe', stream.current(), ',', stream.string);
             state.closeKey          = 'noPipe';
             state.hasPipe           = false;
             state.hasComment        = null;
             state.isValidCodeBlock  = true;
+            closeRegex = new RegExp(`^\\n`);
           }
 
           // Remember num chars of indentation
           // Accounts for spaces vs. tabs (converts to spaces)
           if ( state.isValidCodeBlock ) state.numIndentationSpaces = stream.indentation();
+          indentation = state.numIndentationSpaces;
 
           // if it's a valid code block, we'll know to
           // start python after meta tokens pass by
@@ -388,22 +393,22 @@ CodeMirror.yamlmixedMode = function( config ) {
       } else if ( state.activeConfig.close && state.activeMode.name === 'python' ) {
 
         let stopInner   = false;
-        let closeTester = state.activeConfig.close[ state.closeKey ];
+        let closeConfig = state.activeConfig.close
+        let closeTester = closeRegex; // closeConfig[ state.closeKey ];
 
         // Can't get `string.current` without getting the token
         let tokenType = state.activeMode.token( stream, state.activeState );
+        
+        let testerStr = closeTester.toString()
+        if ( /\\n/.test( testerStr ) || /\n/.test( testerStr )) {
+          if ( stream.eol() ) stopInner = true;
+        }
 
         // Any new line after a pipe that isn't indented enough isn't in
         // the code block anymore
         if ( state.hasPipe === true ) {
           let isIndentedEnough = stream.indentation() > state.numIndentationSpaces;
           if ( !isIndentedEnough ) stopInner = true;
-
-        // Else, one-liner python should stop at the end of the line
-        } else if ( state.hasPipe === false ) {
-          if ( stream.eol()) stopInner = true;
-          // Don't have to worry about alerting the police of wrong indendation on next line.
-          // If next line is indented incorrectly, yaml won't like it either
         }
 
         if ( stopInner ) {
