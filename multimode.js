@@ -221,7 +221,8 @@ CodeMirror.defineMode( "yamlmixed", function(){
     flag if it needs to open
 
   if not needs to open
-    run through the closing stuff
+    if activeConfig.close
+      run through the closing stuff
 */
 CodeMirror.yamlmixedMode = function( config ) {
 
@@ -314,10 +315,11 @@ CodeMirror.yamlmixedMode = function( config ) {
 
     token: function( stream, state ) {
 
-      let outerConfig = state.outerConfig;
+      let outerConfig   = state.outerConfig;
+      let activeConfig  = state.activeConfig
 
       // if yaml mode, search for start of python
-      if ( state.activeMode.name === outerConfig.mode.name ) {
+      if ( activeConfig.open ) {
 
         // moves the parser forward
         let tokenType   = state.activeMode.token( stream, state.activeState );
@@ -393,13 +395,13 @@ CodeMirror.yamlmixedMode = function( config ) {
         return tokenType;
 
       // if python mode, search for end of python
-      } else if ( state.activeConfig.close && state.activeMode.name === 'python' ) {
+      } else if ( activeConfig.close ) {
 
         let closeInner  = false;
 
         // Can't get `string.current` without getting the token
         let tokenType   = state.activeMode.token( stream, state.activeState );
-        let closeConfig = state.activeConfig.close
+        let closeConfig = activeConfig.close
         let closeTester = closeConfig[ state.closeKey ].wholeLineSearch;
 
         // Give them their state too
@@ -442,6 +444,7 @@ CodeMirror.yamlmixedMode = function( config ) {
         if ( closeInner ) {
           state.activeMode        = outerConfig.mode;
           state.activeState       = CodeMirror.startState( state.activeMode );
+          state.activeConfig  = configsObj[ 'yaml' ];
           // There was probably a way to do this without getting
           // the token, but string parsing is fragile
           stream.backUp( stream.current().length );  // Undo gobbling up this token.
