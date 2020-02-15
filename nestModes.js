@@ -229,14 +229,22 @@ let config = {
 // /\\n|\*/.test(/\n/.toString())
 // true
 
+
 // Sure, I could do it all in `.defineMode()`, but then
 // how would I dream of making it into a proper module
 // someday?
 // (keep in here with config for now)
 CodeMirror.defineMode( "yamlmixed", function(){
-  let modeNester = new CodeMirror.ModeNester();
-  return modeNester.nestModes( config );
+  // let modeNester = new CodeMirror.ModeNester();
+  // return modeNester.nestModes( config );
+  return CodeMirror.nestModes( config );
 });
+
+// CodeMirror.ModeNester = class ModeNester {
+//   nestModes ( config ) {
+//     return CodeMirror.nestModes( config );
+//   }
+// };  // Ends ModeNester
 
 
 /*
@@ -248,12 +256,6 @@ CodeMirror.defineMode( "yamlmixed", function(){
     if activeConfig.closers
       run through the closing stuff
 */
-CodeMirror.ModeNester = class ModeNester {
-  nestModes ( config ) {
-    return CodeMirror.nestModes( config );
-  }
-};  // Ends ModeNester
-
 CodeMirror.nestModes = function( config ) {
 
   let yamlMode    = CodeMirror.getMode( {}, 'yaml' );
@@ -289,6 +291,9 @@ CodeMirror.nestModes = function( config ) {
       starterConfig = configsObj[ configsObj.starterName ],
       devState      = config.state;  // will matter later
 
+  // q: if only 50 lines of code, how handle this?
+  // plugin for editor: meta+d/meta+alt+g for all open files,
+  // exposed files (in columns/panes), or for selected files.
   return {
     startState: function() {
 

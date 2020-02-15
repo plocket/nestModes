@@ -1,4 +1,6 @@
-
+// WARNING
+// This file is dead without some serious decisions about
+// flatness and what it means.
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
 let toEscape = /[.*+\-?^${}()|[\]\\]/g;
