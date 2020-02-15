@@ -54,6 +54,7 @@ let config = {
     // delimeterStyle: null,
     yaml: {
       mode: CodeMirror.getMode( {}, 'yaml' ),
+      // obj to be consistent
       openers: [ //{
         // Map?
         // needs key names?
@@ -79,15 +80,16 @@ let config = {
             return regex;
             // return wasFound;
           },  // /\s*code/
-          nextTestToLoopThrough: {
-            withPipe: {
+          nextTestToLoopThrough: [//{
+            // withPipe: {
+            {
               // mode:               null,
               innerConfigName:    null,
               tokenTypes:          null,
               closeKey:           null,
               wholeLineSearch:    /^\s*code\s*:\s+\|\s*$/,
               tokenStringSearch:  null,
-              nextTestToLoopThrough: {
+              nextTestToLoopThrough: [//{
                 // What about: ifNotFound: 'end'/'invalid', 'loop' (to the end of the line)
                 // Or just always loop? I think you could always loop since the previous
                 // searches would know what was coming up...? But what if there are two of
@@ -98,7 +100,8 @@ let config = {
                 // flag? How would _I_ be able to detect that in their regex? Is that even
                 // needed?
                 // Also, only loop for tokenStringSearch or tokenTypes?
-                withPipe: {
+                // withPipe: {
+                {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
                   innerConfigName:    'python',
                   tokenTypes:          'meta',
@@ -107,17 +110,19 @@ let config = {
                   tokenStringSearch:  /\s*\|\s*/,
                   nextTestToLoopThrough: null,
                 },
-              },  // ends .next
+              ],//},  // ends .next
             },
-            withPipeAndComment: {
+            // withPipeAndComment: {
+            {
               // mode:               null,
               innerConfigName:    null,
               tokenTypes:          null,
               closeKey:           null,
               wholeLineSearch:    /^\s*code\s*:\s+\|\s*#.*$/,
               tokenStringSearch:  null,
-              nextTestToLoopThrough: {
-                withPipeAndComment: {
+              nextTestToLoopThrough: [//{
+                // withPipeAndComment: {
+                {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
                   innerConfigName:    'python',
                   tokenTypes:          null,
@@ -127,16 +132,18 @@ let config = {
                   tokenStringSearch:  null,
                   nextTestToLoopThrough: null,
                 },
-              },  // ends .next
+              ],//},  // ends .next
             },
-            noPipe: {
+            // noPipe: {
+            {
               mode:               null,
               tokenTypes:          null,
               closeKey:           null,
               wholeLineSearch:    /^\s*code\s*:\s+[^\|][\s\S]+$/,
               tokenStringSearch:  null,
-              nextTestToLoopThrough: {
-                noPipe: {
+              nextTestToLoopThrough: [//{
+                // noPipe: {
+                {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
                   innerConfigName:    'python',
                   tokenTypes:          'meta',
@@ -145,9 +152,9 @@ let config = {
                   tokenStringSearch:  /\s*:\s*/,
                   nextTestToLoopThrough: null,
                 },
-              },  // ends .next
-            },  // ends `.noPipe` openers sub-type
-          }  // ends `.next` sub-type ('code' atom)
+              ],//},  // ends .nextTestToLoopThrough
+            },  // ends `.noPipe` openers sub-types
+          ],//},  // ends `.nextTestToLoopThrough` sub-types ('code' atom)
         },  // ends `.code` type
       ],//},  // ends openers
     },  // ends yaml
@@ -484,17 +491,24 @@ CodeMirror.yamlmixedMode = function( config ) {
 
 const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
 
-  console.log( openers );
-
-  // for ( let opener of activeConfig.openers ) {
-  //   if ( opener.tokenTypes ) {
-  //     let tokenTypesToMatch = opener.tokenTypes;
-  //     let tokenTypeRegex   = tokenTypeToMatch;
-  //     if ( typeof tokenTypeToMatch === 'string' ) {
-  //       tokenTypeRegex = new Regexp(`\\b${tokenTypeToMatch}\\b`);
-  //     }
-  //   }
-  // }
+  for ( let oneOpener of openers ) {
+    // console.log( oneOpener );
+    // if ( oneOpener.tokenTypes ) {
+    //   let tokenTypesToMatch = oneOpener.tokenTypes;
+    //   let tokenTypeRegex   = tokenTypeToMatch;
+    //   if ( typeof tokenTypeToMatch === 'string' ) {
+    //     tokenTypeRegex = new Regexp(`\\b${tokenTypeToMatch}\\b`);
+    //   }
+    // }
+    if ( oneOpener.nextTestToLoopThrough ) {
+      return seekInnerMode({
+        stream,
+        state,
+        tokenTypes,
+        openers: oneOpener.nextTestToLoopThrough,
+      });
+    }
+  }
 
 };  // Ends .seekInnerMode()
 
