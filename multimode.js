@@ -63,7 +63,7 @@ let config = {
           // mode here or bottom level of nesting?
           // mode:               null,
           innerConfigName:    null,
-          tokenType:          'atom',
+          tokenTypes:          'atom',
           // Just use the key of the parent? Or will they need
           // to use the same type multiple times?
           closeKey:           null,
@@ -83,7 +83,7 @@ let config = {
             withPipe: {
               // mode:               null,
               innerConfigName:    null,
-              tokenType:          null,
+              tokenTypes:          null,
               closeKey:           null,
               wholeLineSearch:    /^\s*code\s*:\s+\|\s*$/,
               tokenStringSearch:  null,
@@ -97,11 +97,11 @@ let config = {
                 // recursively...? Maybe /\n*/ would do that? Or "\n*"? Maybe a multiline
                 // flag? How would _I_ be able to detect that in their regex? Is that even
                 // needed?
-                // Also, only loop for tokenStringSearch or tokenType?
+                // Also, only loop for tokenStringSearch or tokenTypes?
                 withPipe: {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
                   innerConfigName:    'python',
-                  tokenType:          'meta',
+                  tokenTypes:          'meta',
                   closeKey:           'withPipe',
                   wholeLineSearch:    null,
                   tokenStringSearch:  /\s*\|\s*/,
@@ -112,7 +112,7 @@ let config = {
             withPipeAndComment: {
               // mode:               null,
               innerConfigName:    null,
-              tokenType:          null,
+              tokenTypes:          null,
               closeKey:           null,
               wholeLineSearch:    /^\s*code\s*:\s+\|\s*#.*$/,
               tokenStringSearch:  null,
@@ -120,7 +120,7 @@ let config = {
                 withPipeAndComment: {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
                   innerConfigName:    'python',
-                  tokenType:          null,
+                  tokenTypes:          null,
                   closeKey:           'withPipeAndComment',
                   wholeLineSearch:    '\n',
                   // Allow '\n' this one too?
@@ -131,7 +131,7 @@ let config = {
             },
             noPipe: {
               mode:               null,
-              tokenType:          null,
+              tokenTypes:          null,
               closeKey:           null,
               wholeLineSearch:    /^\s*code\s*:\s+[^\|][\s\S]+$/,
               tokenStringSearch:  null,
@@ -139,7 +139,7 @@ let config = {
                 noPipe: {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
                   innerConfigName:    'python',
-                  tokenType:          'meta',
+                  tokenTypes:          'meta',
                   closeKey:           'noPipe',
                   wholeLineSearch:    null,
                   tokenStringSearch:  /\s*:\s*/,
@@ -331,14 +331,14 @@ CodeMirror.yamlmixedMode = function( config ) {
       // Look for modes to open
       if ( activeConfig.openers ) {
 
-        for ( let innerConfig of activeConfig.openers ) {
-
-        }
-
         // moves the parser forward
         let tokenType     = state.activeMode.token( stream, state.activeState );
         let tokenStr      = stream.current();
         let wholeLineStr  = stream.string;
+
+        let openers = activeConfig.openers;
+        let tokenTypes = tokenType;
+        seekInnerMode({ stream, state, tokenTypes, openers });
 
 
         let tokenIsAtom = atomTokenRegex.test( tokenType );
@@ -481,5 +481,21 @@ CodeMirror.yamlmixedMode = function( config ) {
     },  // Ends .token()
   };  // ends return
 };
+
+const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
+
+  console.log( openers );
+
+  // for ( let opener of activeConfig.openers ) {
+  //   if ( opener.tokenTypes ) {
+  //     let tokenTypesToMatch = opener.tokenTypes;
+  //     let tokenTypeRegex   = tokenTypeToMatch;
+  //     if ( typeof tokenTypeToMatch === 'string' ) {
+  //       tokenTypeRegex = new Regexp(`\\b${tokenTypeToMatch}\\b`);
+  //     }
+  //   }
+  // }
+
+};  // Ends .seekInnerMode()
 
 });
