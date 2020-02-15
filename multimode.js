@@ -64,12 +64,16 @@ let config = {
           // mode here or bottom level of nesting?
           // mode:               null,
           innerConfigName:    null,
-          tokenTypes:          'atom',
+          // Have just a tester that's a function
+          // that can test everything?
+          tester:             null,
+          // If they want multiple, they can do nested tests
+          tokenTypeMatcher:   'atom',
           // Just use the key of the parent? Or will they need
           // to use the same type multiple times?
           closeKey:           null,
           wholeLineSearch:    null,
-          tokenStringSearch:  function ( stream, token, state ) {
+          tokenStringSearch:  function ( stream, tokenTypes, state ) {
 
             let regex       = /\s*code/;
             let currString  = stream.current();
@@ -85,7 +89,7 @@ let config = {
             {
               // mode:               null,
               innerConfigName:    null,
-              tokenTypes:          null,
+              tokenTypeMatcher:   null,
               closeKey:           null,
               wholeLineSearch:    /^\s*code\s*:\s+\|\s*$/,
               tokenStringSearch:  null,
@@ -99,12 +103,11 @@ let config = {
                 // recursively...? Maybe /\n*/ would do that? Or "\n*"? Maybe a multiline
                 // flag? How would _I_ be able to detect that in their regex? Is that even
                 // needed?
-                // Also, only loop for tokenStringSearch or tokenTypes?
-                // withPipe: {
+                // Also, only loop for tokenStringSearch or tokenTypeMatcher            // withPipe: {
                 {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
                   innerConfigName:    'python',
-                  tokenTypes:          'meta',
+                  tokenTypeMatcher:   'meta',
                   closeKey:           'withPipe',
                   wholeLineSearch:    null,
                   tokenStringSearch:  /\s*\|\s*/,
@@ -116,7 +119,7 @@ let config = {
             {
               // mode:               null,
               innerConfigName:    null,
-              tokenTypes:          null,
+              tokenTypeMatcher:   null,
               closeKey:           null,
               wholeLineSearch:    /^\s*code\s*:\s+\|\s*#.*$/,
               tokenStringSearch:  null,
@@ -125,7 +128,7 @@ let config = {
                 {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
                   innerConfigName:    'python',
-                  tokenTypes:          null,
+                  tokenTypeMatcher:   null,
                   closeKey:           'withPipeAndComment',
                   wholeLineSearch:    '\n',
                   // Allow '\n' this one too?
@@ -137,7 +140,7 @@ let config = {
             // noPipe: {
             {
               mode:               null,
-              tokenTypes:          null,
+              tokenTypeMatcher:   null,
               closeKey:           null,
               wholeLineSearch:    /^\s*code\s*:\s+[^\|][\s\S]+$/,
               tokenStringSearch:  null,
@@ -146,7 +149,7 @@ let config = {
                 {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
                   innerConfigName:    'python',
-                  tokenTypes:          'meta',
+                  tokenTypeMatcher:   'meta',
                   closeKey:           'noPipe',
                   wholeLineSearch:    null,
                   tokenStringSearch:  /\s*:\s*/,
@@ -170,7 +173,7 @@ let config = {
         withPipe: {
           openType:        'withPipe',  // Needed?
           // Can't use `this` in an object
-          wholeLineSearch: function ( stream, token, state ) {
+          wholeLineSearch: function ( stream, tokenTypes, state ) {
             return new RegExp(`^\\s{0,${indentation}}\\S`);
           },
           // Will require the module code to track how many chars to back up
@@ -182,7 +185,7 @@ let config = {
         },
         withPipeAndComment: {
           openType:        'withPipeAndComment',  // Needed?
-          wholeLineSearch: function ( stream, token, state ) {
+          wholeLineSearch: function ( stream, tokenTypes, state ) {
             return new RegExp(`^\\s{0,${indentation}}\\S`);
           },
           // Will require the module code to track how many chars to back up
@@ -339,17 +342,16 @@ CodeMirror.yamlmixedMode = function( config ) {
       if ( activeConfig.openers ) {
 
         // moves the parser forward
-        let tokenType     = state.activeMode.token( stream, state.activeState );
+        let tokenTypes     = state.activeMode.token( stream, state.activeState );
         let tokenStr      = stream.current();
         let wholeLineStr  = stream.string;
 
         let openers = activeConfig.openers;
-        let tokenTypes = tokenType;
         seekInnerMode({ stream, state, tokenTypes, openers });
 
 
-        let tokenIsAtom = atomTokenRegex.test( tokenType );
-        let tokenIsMeta = metaTokenRegex.test( tokenType );
+        let tokenIsAtom = atomTokenRegex.test( tokenTypes );
+        let tokenIsMeta = metaTokenRegex.test( tokenTypes );
 
         // if atom is 'code' with possible whitespace before it
         if ( tokenIsAtom && codeDefinitionRegex.test( tokenStr ) ) {
@@ -415,7 +417,7 @@ CodeMirror.yamlmixedMode = function( config ) {
 
         }  // ends stages of takeoff
 
-        return tokenType;
+        return tokenTypes;
 
       // if python mode, search for end of python
       } else if ( activeConfig.closers ) {
@@ -423,13 +425,13 @@ CodeMirror.yamlmixedMode = function( config ) {
         let closeInner  = false;
 
         // Can't get `string.current` without getting the token
-        let tokenType   = state.activeMode.token( stream, state.activeState );
+        let tokenTypes   = state.activeMode.token( stream, state.activeState );
         let closeConfig = activeConfig.closers
         let closeTester = closeConfig[ state.closeKey ].wholeLineSearch;
 
         // Give them their state too
         if ( typeof closeTester === 'function' ) {
-          closeTester = closeTester( stream, tokenType, config.state );
+          closeTester = closeTester( stream, tokenTypes, config.state );
           // todo: allow them to run their own test instead of
           // returning regex or string? Check for bool?
         }
@@ -479,11 +481,11 @@ CodeMirror.yamlmixedMode = function( config ) {
           state.closeKey          = null;
         }
 
-        // If stopping python, `tokenType` won't matter because
+        // If stopping python, `tokenTypes` won't matter because
         // we already jumped back and the token will be re-processed anyway.
-        tokenType += ' python';  // 'python' class == more examinable
+        tokenTypes += ' python';  // 'python' class == more examinable
 
-        return tokenType;
+        return tokenTypes;
       }  // ends which mode
     },  // Ends .token()
   };  // ends return
@@ -494,15 +496,28 @@ const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
   let innerConfigName = null;
   for ( let oneOpener of openers ) {
 
+    // Have a `tester` that is just a function that can
+    // handle everything itself?
+    let matchedTokenTypes = didMatchTokenType( tokenTypes, oneOpener.tokenTypeMatcher );
+    let matchedWholeLine  = false;
+    let matchedCurrString = false;
+
+    // If doesn't pass any tests, no inner mode found
+    if ( !matchedTokenTypes
+      && !matchedWholeLine
+      && !matchedCurrString ) {
+      return null;
+    }
+
     // if ( oneOpener.tokenTypes ) {
-    //   let tokenTypesToMatch = oneOpener.tokenTypes;
-    //   let tokenTypeRegex   = tokenTypeToMatch;
-    //   if ( typeof tokenTypeToMatch === 'string' ) {
-    //     tokenTypeRegex = new Regexp(`\\b${tokenTypeToMatch}\\b`);
+    //   let tokenTypesMatcher = oneOpener.tokenTypes;
+    //   let tokenTypeRegex   = tokenTypeMatcher;
+    //   if ( typeof tokenTypeMatcher === 'string' ) {
+    //     tokenTypeRegex = new Regexp(`\\b${tokenTypeMatcher}\\b`);
     //   }
     // }
 
-    // todo: check for regex
+    // todo: check for regex?
     if ( typeof oneOpener.innerConfigName === 'string' ) {
       return oneOpener.innerConfigName;
 
@@ -514,10 +529,56 @@ const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
         openers: oneOpener.nextTestsToLoopThrough,
       });
     }
+
+    // if not null, break?
   }  // ends for all openers
 
-  return innerConfigName
+  return innerConfigName;
 
-};  // Ends .seekInnerMode()
+};  // Ends seekInnerMode()
+
+// // Assumes it is give the right input
+// const stringToWordBreakRegex = function ( strOrNot ) {
+//   if ( strOrNot && typeof strOrNot === 'string' ) {
+//     // Not sure this needs escaping...
+//     return new RegExp( `\\b${ escapeRegExp( strOrNot )}\\b` );
+//   } else {
+//     return strOrNot;
+//   }
+// };  // Ends stringToWordBreakRegex()
+
+const didMatchTokenType = function ( tokenTypes, tokenTypeMatcher ) {
+  // What can `tokenTypes` be?
+  // Just an array? Of strings? Of regexps? A string
+  // of one or mutliple words separated by spaces?
+  // A function?
+
+  if ( !tokenTypeMatcher ) {
+    return false;
+  }
+
+  if ( typeof tokenTypeMatcher === 'function' ) {
+    return tokenTypeMatcher( tokenTypes );
+  }
+
+  let matcherRegex = tokenTypeMatcher;
+  if ( typeof tokenTypeMatcher === 'string' ) {
+    // Could this really need escaping?
+    matcherRegex = new RegExp( `\\b${ escapeRegExp( tokenTypeMatcher )}\\b` );
+  }
+
+  let passesTest = matcherRegex.test( tokenTypes );
+  console.log( passesTest, tokenTypes );
+  return passesTest;
+};  // Ends didMatchTokenType()
+
+// const didMatchWholeLine = function ( tokenTypes, wholeLine, tests ) {
+
+// };  // Ends didMatchWholeLine()
+
+// const didMatchCurrString = function ( tokenTypes, currString, tests ) {
+
+// };  // Ends didMatchCurrString()
+
 
 });
