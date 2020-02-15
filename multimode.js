@@ -80,7 +80,7 @@ let config = {
             return regex;
             // return wasFound;
           },  // /\s*code/
-          nextTestToLoopThrough: [//{
+          nextTestsToLoopThrough: [//{
             // withPipe: {
             {
               // mode:               null,
@@ -89,7 +89,7 @@ let config = {
               closeKey:           null,
               wholeLineSearch:    /^\s*code\s*:\s+\|\s*$/,
               tokenStringSearch:  null,
-              nextTestToLoopThrough: [//{
+              nextTestsToLoopThrough: [//{
                 // What about: ifNotFound: 'end'/'invalid', 'loop' (to the end of the line)
                 // Or just always loop? I think you could always loop since the previous
                 // searches would know what was coming up...? But what if there are two of
@@ -108,7 +108,7 @@ let config = {
                   closeKey:           'withPipe',
                   wholeLineSearch:    null,
                   tokenStringSearch:  /\s*\|\s*/,
-                  nextTestToLoopThrough: null,
+                  nextTestsToLoopThrough: null,
                 },
               ],//},  // ends .next
             },
@@ -120,7 +120,7 @@ let config = {
               closeKey:           null,
               wholeLineSearch:    /^\s*code\s*:\s+\|\s*#.*$/,
               tokenStringSearch:  null,
-              nextTestToLoopThrough: [//{
+              nextTestsToLoopThrough: [//{
                 // withPipeAndComment: {
                 {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
@@ -130,7 +130,7 @@ let config = {
                   wholeLineSearch:    '\n',
                   // Allow '\n' this one too?
                   tokenStringSearch:  null,
-                  nextTestToLoopThrough: null,
+                  nextTestsToLoopThrough: null,
                 },
               ],//},  // ends .next
             },
@@ -141,7 +141,7 @@ let config = {
               closeKey:           null,
               wholeLineSearch:    /^\s*code\s*:\s+[^\|][\s\S]+$/,
               tokenStringSearch:  null,
-              nextTestToLoopThrough: [//{
+              nextTestsToLoopThrough: [//{
                 // noPipe: {
                 {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
@@ -150,11 +150,11 @@ let config = {
                   closeKey:           'noPipe',
                   wholeLineSearch:    null,
                   tokenStringSearch:  /\s*:\s*/,
-                  nextTestToLoopThrough: null,
+                  nextTestsToLoopThrough: null,
                 },
-              ],//},  // ends .nextTestToLoopThrough
+              ],//},  // ends .nextTestsToLoopThrough
             },  // ends `.noPipe` openers sub-types
-          ],//},  // ends `.nextTestToLoopThrough` sub-types ('code' atom)
+          ],//},  // ends `.nextTestsToLoopThrough` sub-types ('code' atom)
         },  // ends `.code` type
       ],//},  // ends openers
     },  // ends yaml
@@ -178,7 +178,7 @@ let config = {
           // How can the coder indicate what part of this process needs
           // to be backed up?
           shouldBackUp:    true,
-          nextTestToLoopThrough: null,
+          nextTestsToLoopThrough: null,
         },
         withPipeAndComment: {
           openType:        'withPipeAndComment',  // Needed?
@@ -190,7 +190,7 @@ let config = {
           // How can the coder indicate what part of this process needs
           // to be backed up?
           shouldBackUp:     true,
-          nextTestToLoopThrough: null,
+          nextTestsToLoopThrough: null,
         },
         noPipe: {
           openType:         'noPipe',  // Needed?
@@ -200,7 +200,7 @@ let config = {
           // How can the coder indicate what part of this process needs
           // to be backed up?
           shouldBackUp:     true,
-          nextTestToLoopThrough: null,
+          nextTestsToLoopThrough: null,
         },
       },  // ends closers
     },  // ends python
@@ -491,8 +491,9 @@ CodeMirror.yamlmixedMode = function( config ) {
 
 const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
 
+  let innerConfigName = null;
   for ( let oneOpener of openers ) {
-    // console.log( oneOpener );
+
     // if ( oneOpener.tokenTypes ) {
     //   let tokenTypesToMatch = oneOpener.tokenTypes;
     //   let tokenTypeRegex   = tokenTypeToMatch;
@@ -500,15 +501,22 @@ const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
     //     tokenTypeRegex = new Regexp(`\\b${tokenTypeToMatch}\\b`);
     //   }
     // }
-    if ( oneOpener.nextTestToLoopThrough ) {
-      return seekInnerMode({
+
+    // todo: check for regex
+    if ( typeof oneOpener.innerConfigName === 'string' ) {
+      return oneOpener.innerConfigName;
+
+    } else if ( oneOpener.nextTestsToLoopThrough ) {
+      innerConfigName = seekInnerMode({
         stream,
         state,
         tokenTypes,
-        openers: oneOpener.nextTestToLoopThrough,
+        openers: oneOpener.nextTestsToLoopThrough,
       });
     }
-  }
+  }  // ends for all openers
+
+  return innerConfigName
 
 };  // Ends .seekInnerMode()
 
