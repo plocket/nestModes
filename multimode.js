@@ -231,7 +231,7 @@ let config = {
 // how would I dream of making it into a proper module
 // someday?
 CodeMirror.defineMode( "yamlmixed", function(){
-  return CodeMirror.yamlmixedMode( config );
+  return CodeMirror.nestModes( config );
 });
 
 
@@ -244,7 +244,7 @@ CodeMirror.defineMode( "yamlmixed", function(){
     if activeConfig.closers
       run through the closing stuff
 */
-CodeMirror.yamlmixedMode = function( config ) {
+CodeMirror.nestModes = function( config ) {
 
   let yamlMode    = CodeMirror.getMode( {}, 'yaml' );
   let pythonMode  = CodeMirror.getMode( {}, 'python' );
@@ -537,16 +537,6 @@ const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
 
 };  // Ends seekInnerMode()
 
-// // Assumes it is give the right input
-// const stringToWordBreakRegex = function ( strOrNot ) {
-//   if ( strOrNot && typeof strOrNot === 'string' ) {
-//     // Not sure this needs escaping...
-//     return new RegExp( `\\b${ escapeRegExp( strOrNot )}\\b` );
-//   } else {
-//     return strOrNot;
-//   }
-// };  // Ends stringToWordBreakRegex()
-
 const doesTestExist = function ( test ) {
   return test !== null && test !== undefined;
 };
@@ -574,10 +564,7 @@ const didMatchTokenType = function ( tokenTypes, tokenTypeMatcher ) {
     matcherRegex = new RegExp( `\\b${ escapeRegExp( tokenTypeMatcher )}\\b` );
   }
 
-
   let passesTest = matcherRegex.test( tokenTypes );
-  
-  console.log( passesTest, tokenTypes );
   return passesTest;
 };  // Ends didMatchTokenType()
 
