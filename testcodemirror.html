@@ -10,7 +10,7 @@
         <script src="codemirror/mode/python/python.js"></script>
 
         <!-- <script src="yamlmixed.js"></script> -->
-        <script src="multimode.js"></script>
+        <script src="nestModes.js"></script>
     </head>
     <body>
         <textarea id="code" name="code" rows="34" cols="80">
@@ -43,13 +43,13 @@ fields:
   - Last name: client.name.last
         </textarea>
         <script>
-            var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-                mode: 'yamlmixed',
-                lineNumbers: true,
-                tabSize: 2,
-                tabindex: 70,
-                theme: 'paraiso-light',
-            });
+          var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+              mode: 'yamlmixed',
+              lineNumbers: true,
+              tabSize: 2,
+              tabindex: 70,
+              theme: 'paraiso-light',
+          });
         </script>
     </body>
 </html>

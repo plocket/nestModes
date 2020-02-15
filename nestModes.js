@@ -230,6 +230,7 @@ let config = {
 // Sure, I could do it all in `.defineMode()`, but then
 // how would I dream of making it into a proper module
 // someday?
+// (keep in here with config for now)
 CodeMirror.defineMode( "yamlmixed", function(){
   return CodeMirror.nestModes( config );
 });
