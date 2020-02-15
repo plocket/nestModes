@@ -499,8 +499,8 @@ const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
     // Have a `tester` that is just a function that can
     // handle everything itself?
     let matchedTokenTypes = didMatchTokenType( tokenTypes, oneOpener.tokenTypeMatcher );
-    let matchedWholeLine  = false;
-    let matchedCurrString = false;
+    let matchedWholeLine  = true;
+    let matchedCurrString = true;
 
     // If doesn't pass any tests, no inner mode found
     if ( !matchedTokenTypes
@@ -553,8 +553,11 @@ const didMatchTokenType = function ( tokenTypes, tokenTypeMatcher ) {
   // of one or mutliple words separated by spaces?
   // A function?
 
-  if ( !tokenTypeMatcher ) {
-    return false;
+  // If no tokenTypeMatcher then dev didn't define one,
+  // so skip over it.
+  let testExists = doesTestExist( tokenTypeMatcher );
+  if ( !testExists ) {
+    return true;
   }
 
   if ( typeof tokenTypeMatcher === 'function' ) {
@@ -580,5 +583,9 @@ const didMatchTokenType = function ( tokenTypes, tokenTypeMatcher ) {
 
 // };  // Ends didMatchCurrString()
 
+
+const doesTestExist = function ( test ) {
+  return test !== null && test !== undefined;
+};
 
 });
