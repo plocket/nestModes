@@ -50,34 +50,39 @@ let config = {
   state: { indentation: 0 },
   configsObj: {
     starterName: 'yaml',
-    // mode:           CodeMirror.getMode( {}, 'yaml' ),
+    mode:           CodeMirror.getMode( {}, 'yaml' ),
     // delimeterStyle: null,
     yaml: {
       mode: CodeMirror.getMode( {}, 'yaml' ),
-      openers: {
-        innerModeName: 'python',
+      openers: [ //{
         // Map?
-        code: {  // needs key name?
+        // needs key names?
+        // code: {
         // python: {
-          mode:               null,  // mode here or bottom level of nesting?
+        {
+          // mode here or bottom level of nesting?
+          // mode:               null,
+          innerConfigName:    null,
           tokenType:          'atom',
           // Just use the key of the parent? Or will they need
           // to use the same type multiple times?
           closeKey:           null,
           wholeLineSearch:    null,
-          tokenStringSearch:  function ( stream, state ) {
+          tokenStringSearch:  function ( stream, token, state ) {
+
+            let regex       = /\s*code/;
             let currString  = stream.current();
-            let wasFound    = /\s*code/.test( currString );
+            let wasFound    = regex.test( currString );
             if ( wasFound ) indentation = stream.indentation();
-            // or
-            if ( wasFound ) closeRegex = new RegExp(`^\\s{0,${indentation}}\\S`);
-            // or if we're doing this as a class
+            // or if we're doing this statefully
             if ( wasFound ) state.indentation = stream.indentation();
-            return wasFound;
-          },  // /\s*code/,
+            return regex;
+            // return wasFound;
+          },  // /\s*code/
           nextTestToLoopThrough: {
             withPipe: {
-              mode:               null,  // mode here or bottom level of nesting?
+              // mode:               null,
+              innerConfigName:    null,
               tokenType:          null,
               closeKey:           null,
               wholeLineSearch:    /^\s*code\s*:\s+\|\s*$/,
@@ -94,7 +99,8 @@ let config = {
                 // needed?
                 // Also, only loop for tokenStringSearch or tokenType?
                 withPipe: {
-                  mode:               CodeMirror.getMode( {}, 'python' ),  // mode here or bottom level of nesting?
+                  // mode:               CodeMirror.getMode( {}, 'python' ),
+                  innerConfigName:    'python',
                   tokenType:          'meta',
                   closeKey:           'withPipe',
                   wholeLineSearch:    null,
@@ -104,18 +110,21 @@ let config = {
               },  // ends .next
             },
             withPipeAndComment: {
-              mode:               null,  // mode here or bottom level of nesting?
+              // mode:               null,
+              innerConfigName:    null,
               tokenType:          null,
               closeKey:           null,
               wholeLineSearch:    /^\s*code\s*:\s+\|\s*#.*$/,
               tokenStringSearch:  null,
               nextTestToLoopThrough: {
                 withPipeAndComment: {
-                  mode:               CodeMirror.getMode( {}, 'python' ),  // mode here or bottom level of nesting?
+                  // mode:               CodeMirror.getMode( {}, 'python' ),
+                  innerConfigName:    'python',
                   tokenType:          null,
                   closeKey:           'withPipeAndComment',
                   wholeLineSearch:    '\n',
-                  tokenStringSearch:  null,  // Allow '\n' here too?
+                  // Allow '\n' this one too?
+                  tokenStringSearch:  null,
                   nextTestToLoopThrough: null,
                 },
               },  // ends .next
@@ -128,7 +137,8 @@ let config = {
               tokenStringSearch:  null,
               nextTestToLoopThrough: {
                 noPipe: {
-                  mode:               CodeMirror.getMode( {}, 'python' ),  // mode here or bottom level of nesting?
+                  // mode:               CodeMirror.getMode( {}, 'python' ),
+                  innerConfigName:    'python',
                   tokenType:          'meta',
                   closeKey:           'noPipe',
                   wholeLineSearch:    null,
@@ -139,7 +149,7 @@ let config = {
             },  // ends `.noPipe` openers sub-type
           }  // ends `.next` sub-type ('code' atom)
         },  // ends `.code` type
-      },  // ends openers
+      ],//},  // ends openers
     },  // ends yaml
     python: {
       mode:    CodeMirror.getMode( {}, 'python' ),
@@ -320,6 +330,10 @@ CodeMirror.yamlmixedMode = function( config ) {
 
       // Look for modes to open
       if ( activeConfig.openers ) {
+
+        for ( let innerConfig of activeConfig.openers ) {
+
+        }
 
         // moves the parser forward
         let tokenType     = state.activeMode.token( stream, state.activeState );
