@@ -1,4 +1,6 @@
 // multimode.js
+
+// What does 'flat' mean, architecturally?
 (function(mod) {
   if (typeof exports == "object" && typeof module == "object") // CommonJS
     mod(require("../../lib/codemirror"));
@@ -232,7 +234,8 @@ let config = {
 // someday?
 // (keep in here with config for now)
 CodeMirror.defineMode( "yamlmixed", function(){
-  return CodeMirror.nestModes( config );
+  let modeNester = new CodeMirror.ModeNester();
+  return modeNester.nestModes( config );
 });
 
 
@@ -245,6 +248,12 @@ CodeMirror.defineMode( "yamlmixed", function(){
     if activeConfig.closers
       run through the closing stuff
 */
+CodeMirror.ModeNester = class ModeNester {
+  nestModes ( config ) {
+    return CodeMirror.nestModes( config );
+  }
+};  // Ends ModeNester
+
 CodeMirror.nestModes = function( config ) {
 
   let yamlMode    = CodeMirror.getMode( {}, 'yaml' );
