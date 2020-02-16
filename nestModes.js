@@ -71,7 +71,7 @@ let config = {
           // Just use the key of the parent? Or will they need
           // to use the same type multiple times?
           closeKey:           null,
-          tokenStringMatcher: function ( stream, tokenTypes, state ) {
+          tokenStringMatcher: function ({ stream, tokenTypes, state }) {
             let regex       = /\s*code/;
             let currString  = stream.current();
             let wasFound    = regex.test( currString );
@@ -82,7 +82,7 @@ let config = {
             // return wasFound;
           },  // /\s*code/
           // Add current string? Whole line? As separate arguments.
-          tester: function ( stream, tokenTypes, state ) {
+          tester: function ({ stream, tokenTypes, state }) {
             let regex       = /\s*code/;
             let currString  = stream.current();
             let wasFound    = regex.test( currString );
@@ -204,7 +204,7 @@ let config = {
         withPipe: {
           openType:        'withPipe',  // Needed?
           // Can't use `this` in an object
-          tester: function ( stream, tokenTypes, state ) {
+          tester: function ({ stream, tokenTypes, state }) {
             let regex     = new RegExp( `^\\s{0,${indentation}}\\S` );
             let didMatch  = regex.test( stream.string );
             return didMatch;
@@ -219,7 +219,7 @@ let config = {
         },
         withPipeAndComment: {
           openType:        'withPipeAndComment',  // Needed?
-          tester: function ( stream, tokenTypes, state ) {
+          tester: function ({ stream, tokenTypes, state }) {
             let regex     = new RegExp( `^\\s{0,${indentation}}\\S` );
             let didMatch  = regex.test( stream.string );
             return didMatch;
@@ -482,7 +482,7 @@ CodeMirror.nestModes = function( config ) {
         let wasFound = false;
         // Give them their state too
         if ( typeof closeTester === 'function' ) {
-          wasFound = closeTester( stream, tokenTypes, config.state );
+          wasFound = closeTester({ stream, tokenTypes, state: config.state });
           // todo: allow them to run their own test instead of
           // returning regex or string? Check for bool?
         } else {
