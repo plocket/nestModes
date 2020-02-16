@@ -73,7 +73,6 @@ let config = {
           // Just use the key of the parent? Or will they need
           // to use the same type multiple times?
           closeKey:           null,
-          wholeLineMatcher:   null,
           tokenStringMatcher: function ( stream, tokenTypes, state ) {
             let regex       = /\s*code/;
             let currString  = stream.current();
@@ -104,7 +103,6 @@ let config = {
               innerConfigName:    null,
               tokenTypeMatcher:   null,
               closeKey:           null,
-              wholeLineMatcher:   /^\s*code\s*:\s+\|\s*$/,
               tester:             /^\s*code\s*:\s+\|\s*$/,
               tokenStringMatcher: null,
               nextLoopTests: [//{
@@ -123,7 +121,6 @@ let config = {
                   innerConfigName:    'python',
                   tokenTypeMatcher:   'meta',
                   closeKey:           'withPipe',
-                  wholeLineMatcher:   null,
                   tokenStringMatcher: /\s*\|\s*/,
                   tester: function ( stream, tokenType, state ) {
                     if ( /\bmeta\b/.test( tokenType )) {
@@ -136,7 +133,6 @@ let config = {
                       innerConfigName:    'python',
                       tokenTypeMatcher:   'meta',
                       closeKey:           'withPipe',
-                      wholeLineMatcher:   null,
                       tokenStringMatcher: /\s*\|\s*/,
                       tester: function ( stream, tokenType, state ) {
                         if ( /\bmeta\b/.test( tokenType )) {
@@ -155,7 +151,6 @@ let config = {
               innerConfigName:    null,
               tokenTypeMatcher:   null,
               closeKey:           null,
-              wholeLineMatcher:   /^\s*code\s*:\s+\|\s*#.*$/,
               tester:             /^\s*code\s*:\s+\|\s*#.*$/,
               tokenStringMatcher: null,
               nextLoopTests: [//{
@@ -165,7 +160,6 @@ let config = {
                   innerConfigName:    'python',
                   tokenTypeMatcher:   null,
                   closeKey:           'withPipeAndComment',
-                  wholeLineMatcher:   '\n',
                   tester:             '\n',
                   // Allow '\n' this one too?
                   tokenStringMatcher: null,
@@ -178,7 +172,6 @@ let config = {
               mode:               null,
               tokenTypeMatcher:   null,
               closeKey:           null,
-              wholeLineMatcher:   /^\s*code\s*:\s+[^\|][\s\S]+$/,
               tester:             /^\s*code\s*:\s+[^\|][\s\S]+$/,
               tokenStringMatcher: null,
               nextLoopTests: [//{
@@ -188,7 +181,6 @@ let config = {
                   innerConfigName:    'python',
                   tokenTypeMatcher:   'meta',
                   closeKey:           'noPipe',
-                  wholeLineMatcher:   null,
                   tokenStringMatcher: /\s*:\s*/,
                   tester: function ( stream, tokenType, state ) {
                     if ( /\bmeta\b/.test( tokenType )) {
@@ -216,9 +208,6 @@ let config = {
         withPipe: {
           openType:        'withPipe',  // Needed?
           // Can't use `this` in an object
-          wholeLineMatcher: function ( stream, tokenTypes, state ) {
-            return new RegExp( `^\\s{0,${indentation}}\\S` );
-          },
           tester: function ( stream, tokenTypes, state ) {
             let regex     = new RegExp( `^\\s{0,${indentation}}\\S` );
             let didMatch  = regex.test( stream.string );
@@ -234,9 +223,6 @@ let config = {
         },
         withPipeAndComment: {
           openType:        'withPipeAndComment',  // Needed?
-          wholeLineMatcher: function ( stream, tokenTypes, state ) {
-            return new RegExp(`^\\s{0,${indentation}}\\S`);
-          },
           tester: function ( stream, tokenTypes, state ) {
             let regex     = new RegExp( `^\\s{0,${indentation}}\\S` );
             let didMatch  = regex.test( stream.string );
@@ -252,7 +238,6 @@ let config = {
         },
         noPipe: {
           openType:         'noPipe',  // Needed?
-          wholeLineMatcher: '\n',
           tester:           '\n',
           // tokenStringMatcher: null,
           // Will require the module code to track how many chars to back up
@@ -366,6 +351,7 @@ CodeMirror.nestModes = function( config ) {
         activeConfig: outerConfig,
         activeMode:   startMode,
         activeState:  startState,
+        tester:       null,
 
         closeKey:         null,
         isValidCodeBlock: false,
@@ -390,6 +376,7 @@ CodeMirror.nestModes = function( config ) {
         activeConfig: active,
         activeMode:   state.activeMode,
         activeState:  CodeMirror.copyState( state.activeMode, state.activeState ),
+        tester:       state.tester,
 
         closeKey:         state.closeKey,
         isValidCodeBlock: state.isValidCodeBlock,
@@ -492,17 +479,15 @@ CodeMirror.nestModes = function( config ) {
       // if python mode, search for end of python
       } else if ( activeConfig.closers ) {
 
-        let closeInner  = false;
-
         // Can't get `string.current` without getting the token
-        let tokenTypes   = state.activeMode.token( stream, state.activeState );
+        let tokenTypes  = state.activeMode.token( stream, state.activeState );
         let closeConfig = activeConfig.closers
-        let newTester   = closeConfig[ state.closeKey ].tester;
+        let closeTester = closeConfig[ state.closeKey ].tester;
 
-        let found = false;
+        let wasFound = false;
         // Give them their state too
-        if ( typeof newTester === 'function' ) {
-          found = newTester( stream, tokenTypes, config.state );
+        if ( typeof closeTester === 'function' ) {
+          wasFound = closeTester( stream, tokenTypes, config.state );
           // todo: allow them to run their own test instead of
           // returning regex or string? Check for bool?
         } else {
@@ -512,17 +497,17 @@ CodeMirror.nestModes = function( config ) {
           // Should this really be handled? But then why wouldn't they have just
           // made it regex? Leave it for the docs?
           // TODO: handle bool too?
-          if ( typeof newTester === 'string' ) {
-            newTester = escapeRegExp( newTester );
-            newTester = new RegExp( newTester );
+          if ( typeof closeTester === 'string' ) {
+            closeTester = escapeRegExp( closeTester );
+            closeTester = new RegExp( closeTester );
           };
 
           // Now get a string. I know, I know. But this is the
-          // easiest way I've found to test these various cases.
+          // easiest way I've wasFound to test these various cases.
           // Can be flipped back and forth between RegExp and
           // string with no problems. Weird. Anyway, have to turn
           // this to a string to test its new-line-ness.
-          let testerStr = newTester.toString();
+          let testerStr = closeTester.toString();
 
           // Deal with the idea of new line searchers
           // considering codemirror evaluates one line at a time.
@@ -530,16 +515,16 @@ CodeMirror.nestModes = function( config ) {
           // i.e. ^\n or \n$ are fine, but if they do \nxyz then
           // there's more checking to do. todo.
           if ( /\\n/.test( testerStr ) || /\n/.test( testerStr )) {
-            if ( stream.eol() ) found = true;
+            if ( stream.eol() ) wasFound = true;
           
           } else {
             // Otherwise match the closing case normally
             let wholeLineStr  = stream.string;
-            found             = newTester.test( wholeLineStr );
+            wasFound          = closeTester.test( wholeLineStr );
           }
         }  // ends tester type
 
-        if ( found ) {
+        if ( wasFound ) {
           state.activeMode        = outerConfig.mode;
           state.activeState       = CodeMirror.startState( state.activeMode );
           state.activeConfig  = configsObj[ 'yaml' ];
