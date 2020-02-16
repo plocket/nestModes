@@ -205,6 +205,7 @@ let config = {
     },  // ends yaml
     python: {
       mode:    CodeMirror.getMode( {}, 'python' ),
+      // Need to be able to have nested closers?
       closers: {
         // // Needed? Or just go for the deepest nesting?
         // code: {
@@ -219,7 +220,9 @@ let config = {
             return new RegExp( `^\\s{0,${indentation}}\\S` );
           },
           tester: function ( stream, tokenTypes, state ) {
-            return new RegExp( `^\\s{0,${indentation}}\\S` );
+            let regex     = new RegExp( `^\\s{0,${indentation}}\\S` );
+            let didMatch  = regex.test( stream.string );
+            return didMatch;
           },
           // tokenStringMatcher: null,
           // Will require the module code to track how many chars to back up
@@ -235,7 +238,9 @@ let config = {
             return new RegExp(`^\\s{0,${indentation}}\\S`);
           },
           tester: function ( stream, tokenTypes, state ) {
-            return new RegExp(`^\\s{0,${indentation}}\\S`);
+            let regex     = new RegExp( `^\\s{0,${indentation}}\\S` );
+            let didMatch  = regex.test( stream.string );
+            return didMatch;
           },
           // tokenStringMatcher: null,
           // Will require the module code to track how many chars to back up
