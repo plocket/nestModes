@@ -68,15 +68,13 @@ let config = {
           innerConfigName:    null,
           // Have just a tester that's a function
           // that can test everything?
-          tester:             null,
           // If they want multiple, they can do nested tests
           tokenTypeMatcher:   'atom',
           // Just use the key of the parent? Or will they need
           // to use the same type multiple times?
           closeKey:           null,
-          wholeLineSearch:    null,
-          tokenStringSearch:  function ( stream, tokenTypes, state ) {
-
+          wholeLineMatcher:   null,
+          tokenStringMatcher: function ( stream, tokenTypes, state ) {
             let regex       = /\s*code/;
             let currString  = stream.current();
             let wasFound    = regex.test( currString );
@@ -93,8 +91,8 @@ let config = {
               innerConfigName:    null,
               tokenTypeMatcher:   null,
               closeKey:           null,
-              wholeLineSearch:    /^\s*code\s*:\s+\|\s*$/,
-              tokenStringSearch:  null,
+              wholeLineMatcher:   /^\s*code\s*:\s+\|\s*$/,
+              tokenStringMatcher: null,
               nextTestsToLoopThrough: [//{
                 // What about: ifNotFound: 'end'/'invalid', 'loop' (to the end of the line)
                 // Or just always loop? I think you could always loop since the previous
@@ -105,14 +103,14 @@ let config = {
                 // recursively...? Maybe /\n*/ would do that? Or "\n*"? Maybe a multiline
                 // flag? How would _I_ be able to detect that in their regex? Is that even
                 // needed?
-                // Also, only loop for tokenStringSearch or tokenTypeMatcher            // withPipe: {
+                // Also, only loop for tokenStringMatcher r tokenTypeMatcher            // withPipe: {
                 {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
                   innerConfigName:    'python',
                   tokenTypeMatcher:   'meta',
                   closeKey:           'withPipe',
-                  wholeLineSearch:    null,
-                  tokenStringSearch:  /\s*\|\s*/,
+                  wholeLineMatcher:   null,
+                  tokenStringMatcher: /\s*\|\s*/,
                   nextTestsToLoopThrough: null,
                 },
               ],//},  // ends .next
@@ -123,8 +121,8 @@ let config = {
               innerConfigName:    null,
               tokenTypeMatcher:   null,
               closeKey:           null,
-              wholeLineSearch:    /^\s*code\s*:\s+\|\s*#.*$/,
-              tokenStringSearch:  null,
+              wholeLineMatcher:   /^\s*code\s*:\s+\|\s*#.*$/,
+              tokenStringMatcher: null,
               nextTestsToLoopThrough: [//{
                 // withPipeAndComment: {
                 {
@@ -132,9 +130,9 @@ let config = {
                   innerConfigName:    'python',
                   tokenTypeMatcher:   null,
                   closeKey:           'withPipeAndComment',
-                  wholeLineSearch:    '\n',
+                  wholeLineMatcher:   '\n',
                   // Allow '\n' this one too?
-                  tokenStringSearch:  null,
+                  tokenStringMatcher: null,
                   nextTestsToLoopThrough: null,
                 },
               ],//},  // ends .next
@@ -144,8 +142,8 @@ let config = {
               mode:               null,
               tokenTypeMatcher:   null,
               closeKey:           null,
-              wholeLineSearch:    /^\s*code\s*:\s+[^\|][\s\S]+$/,
-              tokenStringSearch:  null,
+              wholeLineMatcher:   /^\s*code\s*:\s+[^\|][\s\S]+$/,
+              tokenStringMatcher: null,
               nextTestsToLoopThrough: [//{
                 // noPipe: {
                 {
@@ -153,8 +151,8 @@ let config = {
                   innerConfigName:    'python',
                   tokenTypeMatcher:   'meta',
                   closeKey:           'noPipe',
-                  wholeLineSearch:    null,
-                  tokenStringSearch:  /\s*:\s*/,
+                  wholeLineMatcher:   null,
+                  tokenStringMatcher: /\s*:\s*/,
                   nextTestsToLoopThrough: null,
                 },
               ],//},  // ends .nextTestsToLoopThrough
@@ -169,15 +167,16 @@ let config = {
         // // Needed? Or just go for the deepest nesting?
         // code: {
         //   openType: 'code',  // Needed?
-        //   wholeLineSearch: /\*/,
+        //   wholeLineMatcher: /\*/,
         //   next: 
         // },  // ends closers types
         withPipe: {
           openType:        'withPipe',  // Needed?
           // Can't use `this` in an object
-          wholeLineSearch: function ( stream, tokenTypes, state ) {
-            return new RegExp(`^\\s{0,${indentation}}\\S`);
+          wholeLineMatcher: function ( stream, tokenTypes, state ) {
+            return new RegExp( `^\\s{0,${indentation}}\\S` );
           },
+          // tokenStringMatcher: null,
           // Will require the module code to track how many chars to back up
           // to. Will it require going back multiple lines? If so, how?
           // How can the coder indicate what part of this process needs
@@ -187,9 +186,10 @@ let config = {
         },
         withPipeAndComment: {
           openType:        'withPipeAndComment',  // Needed?
-          wholeLineSearch: function ( stream, tokenTypes, state ) {
+          wholeLineMatcher: function ( stream, tokenTypes, state ) {
             return new RegExp(`^\\s{0,${indentation}}\\S`);
           },
+          // tokenStringMatcher: null,
           // Will require the module code to track how many chars to back up
           // to. Will it require going back multiple lines? If so, how?
           // How can the coder indicate what part of this process needs
@@ -198,8 +198,9 @@ let config = {
           nextTestsToLoopThrough: null,
         },
         noPipe: {
-          openType:         'noPipe',  // Needed?
-          wholeLineSearch:  "\n",
+          openType:           'noPipe',  // Needed?
+          wholeLineMatcher:   '\n',
+          // tokenStringMatcher: null,
           // Will require the module code to track how many chars to back up
           // to. Will it require going back multiple lines? If so, how?
           // How can the coder indicate what part of this process needs
@@ -442,7 +443,7 @@ CodeMirror.nestModes = function( config ) {
         // Can't get `string.current` without getting the token
         let tokenTypes   = state.activeMode.token( stream, state.activeState );
         let closeConfig = activeConfig.closers
-        let closeTester = closeConfig[ state.closeKey ].wholeLineSearch;
+        let closeTester = closeConfig[ state.closeKey ].wholeLineMatcher;
 
         // Give them their state too
         if ( typeof closeTester === 'function' ) {
@@ -561,6 +562,7 @@ const matchesTokenType = function ( tokenTypes, tokenTypeMatcher ) {
     return true;
   }
 
+  // The other functions return regex right now...
   if ( typeof tokenTypeMatcher === 'function' ) {
     return tokenTypeMatcher( tokenTypes );
   }
