@@ -497,15 +497,7 @@ CodeMirror.nestModes = function( config ) {
         // Can't get `string.current` without getting the token
         let tokenTypes   = state.activeMode.token( stream, state.activeState );
         let closeConfig = activeConfig.closers
-        let closeTester = closeConfig[ state.closeKey ].wholeLineMatcher;
         let newTester   = closeConfig[ state.closeKey ].tester;
-
-        // Give them their state too
-        if ( typeof closeTester === 'function' ) {
-          closeTester = closeTester( stream, tokenTypes, config.state );
-          // todo: allow them to run their own test instead of
-          // returning regex or string? Check for bool?
-        }
 
         let found = false;
         // Give them their state too
@@ -515,13 +507,28 @@ CodeMirror.nestModes = function( config ) {
           // returning regex or string? Check for bool?
         } else {
           
+          // Turn strings into a regular expression with proper escaping.
+          // Not sure about this. What if they've made an already escaped string?
+          // Should this really be handled? But then why wouldn't they have just
+          // made it regex? Leave it for the docs?
+          // TODO: handle bool too?
           if ( typeof newTester === 'string' ) {
             newTester = escapeRegExp( newTester );
             newTester = new RegExp( newTester );
           };
 
-          let testerStr = closeTester.toString();
+          // Now get a string. I know, I know. But this is the
+          // easiest way I've found to test these various cases.
+          // Can be flipped back and forth between RegExp and
+          // string with no problems. Weird. Anyway, have to turn
+          // this to a string to test its new-line-ness.
+          let testerStr = newTester.toString();
 
+          // Deal with the idea of new line searchers
+          // considering codemirror evaluates one line at a time.
+          // How to make sure there's nothing after the new line, etc?
+          // i.e. ^\n or \n$ are fine, but if they do \nxyz then
+          // there's more checking to do. todo.
           if ( /\\n/.test( testerStr ) || /\n/.test( testerStr )) {
             if ( stream.eol() ) found = true;
           
@@ -530,44 +537,9 @@ CodeMirror.nestModes = function( config ) {
             let wholeLineStr  = stream.string;
             found             = newTester.test( wholeLineStr );
           }
+        }  // ends tester type
 
-        }
-
-        // Turn strings into a regular expression with proper escaping.
-        // Not sure about this. What if they've made an already escaped string?
-        // Should this really be handled? But then why wouldn't they have just
-        // made it regex? Leave it for the docs?
-        // TODO: handle bool too?
-        if ( typeof closeTester === 'string' ) {
-          closeTester = escapeRegExp( closeTester );
-          closeTester = new RegExp( closeTester );
-        }
-        
-
-        // Now get a string. I know, I know. But this is the
-        // easiest way I've found to test these various cases.
-        // Can be flipped back and forth between RegExp and
-        // string with no problems. Weird. Anyway, have to turn
-        // this to a string to test its new-line-ness.
-        let testerStr = closeTester.toString();
-        // Deal with the idea of new line searchers
-        // considering codemirror evaluates one line at a time.
-        // How to make sure there's nothing after the new line, etc?
-        // i.e. ^\n or \n$ are fine, but if they do \nxyz then
-        // there's more checking to do. todo.
-        if ( /\\n/.test( testerStr ) || /\n/.test( testerStr )) {
-          if ( stream.eol() ) closeInner = true;
-  
-        } else {
-          // Otherwise match the closing case normally
-          let wholeLineStr  = stream.string;
-          closeInner        = closeTester.test( wholeLineStr );
-        }
-
-        // All except for newline match
-        console.log( closeInner === found );
-
-        if ( closeInner ) {
+        if ( found ) {
           state.activeMode        = outerConfig.mode;
           state.activeState       = CodeMirror.startState( state.activeMode );
           state.activeConfig  = configsObj[ 'yaml' ];
