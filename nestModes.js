@@ -84,7 +84,20 @@ let config = {
             return regex;
             // return wasFound;
           },  // /\s*code/
-          nextTestsToLoopThrough: [//{
+          // Add current string? Whole line? As separate arguments.
+          tester: function ( stream, tokenTypes, state ) {
+            let regex       = /\s*code/;
+            let currString  = stream.current();
+            let wasFound    = regex.test( currString );
+            if ( wasFound ) indentation = stream.indentation();
+            // or if we're doing this statefully
+            if ( wasFound ) state.indentation = stream.indentation();
+            return wasFound;
+            // return wasFound;
+          },
+          // These have to be run on each successive `.token()` call
+          // They can't be looped in the same `.token()`
+          nextLoopTests: [//{
             // withPipe: {
             {
               // mode:               null,
@@ -92,8 +105,9 @@ let config = {
               tokenTypeMatcher:   null,
               closeKey:           null,
               wholeLineMatcher:   /^\s*code\s*:\s+\|\s*$/,
+              tester:             /^\s*code\s*:\s+\|\s*$/,
               tokenStringMatcher: null,
-              nextTestsToLoopThrough: [//{
+              nextLoopTests: [//{
                 // What about: ifNotFound: 'end'/'invalid', 'loop' (to the end of the line)
                 // Or just always loop? I think you could always loop since the previous
                 // searches would know what was coming up...? But what if there are two of
@@ -111,7 +125,27 @@ let config = {
                   closeKey:           'withPipe',
                   wholeLineMatcher:   null,
                   tokenStringMatcher: /\s*\|\s*/,
-                  nextTestsToLoopThrough: null,
+                  tester: function ( stream, tokenType, state ) {
+                    if ( /\bmeta\b/.test( tokenType )) {
+                      if ( /\s*\:\s*/.stream.current ) return true;
+                    }
+                  },
+                  nextLoopTests: [
+                    {
+                      // mode:               CodeMirror.getMode( {}, 'python' ),
+                      innerConfigName:    'python',
+                      tokenTypeMatcher:   'meta',
+                      closeKey:           'withPipe',
+                      wholeLineMatcher:   null,
+                      tokenStringMatcher: /\s*\|\s*/,
+                      tester: function ( stream, tokenType, state ) {
+                        if ( /\bmeta\b/.test( tokenType )) {
+                          if ( /\s*\|\s*/.stream.current ) return true;
+                        }
+                      },
+                      nextLoopTests: null,
+                    },
+                  ],
                 },
               ],//},  // ends .next
             },
@@ -122,8 +156,9 @@ let config = {
               tokenTypeMatcher:   null,
               closeKey:           null,
               wholeLineMatcher:   /^\s*code\s*:\s+\|\s*#.*$/,
+              tester:             /^\s*code\s*:\s+\|\s*#.*$/,
               tokenStringMatcher: null,
-              nextTestsToLoopThrough: [//{
+              nextLoopTests: [//{
                 // withPipeAndComment: {
                 {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
@@ -131,9 +166,10 @@ let config = {
                   tokenTypeMatcher:   null,
                   closeKey:           'withPipeAndComment',
                   wholeLineMatcher:   '\n',
+                  tester:             '\n',
                   // Allow '\n' this one too?
                   tokenStringMatcher: null,
-                  nextTestsToLoopThrough: null,
+                  nextLoopTests: null,
                 },
               ],//},  // ends .next
             },
@@ -143,8 +179,9 @@ let config = {
               tokenTypeMatcher:   null,
               closeKey:           null,
               wholeLineMatcher:   /^\s*code\s*:\s+[^\|][\s\S]+$/,
+              tester:             /^\s*code\s*:\s+[^\|][\s\S]+$/,
               tokenStringMatcher: null,
-              nextTestsToLoopThrough: [//{
+              nextLoopTests: [//{
                 // noPipe: {
                 {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
@@ -153,11 +190,16 @@ let config = {
                   closeKey:           'noPipe',
                   wholeLineMatcher:   null,
                   tokenStringMatcher: /\s*:\s*/,
-                  nextTestsToLoopThrough: null,
+                  tester: function ( stream, tokenType, state ) {
+                    if ( /\bmeta\b/.test( tokenType )) {
+                      if ( /\s*:\s*/.test( stream.current )) return true;
+                    }
+                  }, 
+                  nextLoopTests: null,
                 },
-              ],//},  // ends .nextTestsToLoopThrough
+              ],//},  // ends .nextLoopTests
             },  // ends `.noPipe` openers sub-types
-          ],//},  // ends `.nextTestsToLoopThrough` sub-types ('code' atom)
+          ],//},  // ends `.nextLoopTests` sub-types ('code' atom)
         },  // ends `.code` type
       ],//},  // ends openers
     },  // ends yaml
@@ -176,17 +218,23 @@ let config = {
           wholeLineMatcher: function ( stream, tokenTypes, state ) {
             return new RegExp( `^\\s{0,${indentation}}\\S` );
           },
+          tester: function ( stream, tokenTypes, state ) {
+            return new RegExp( `^\\s{0,${indentation}}\\S` );
+          },
           // tokenStringMatcher: null,
           // Will require the module code to track how many chars to back up
           // to. Will it require going back multiple lines? If so, how?
           // How can the coder indicate what part of this process needs
           // to be backed up?
           shouldBackUp:    true,
-          nextTestsToLoopThrough: null,
+          nextLoopTests: null,
         },
         withPipeAndComment: {
           openType:        'withPipeAndComment',  // Needed?
           wholeLineMatcher: function ( stream, tokenTypes, state ) {
+            return new RegExp(`^\\s{0,${indentation}}\\S`);
+          },
+          tester: function ( stream, tokenTypes, state ) {
             return new RegExp(`^\\s{0,${indentation}}\\S`);
           },
           // tokenStringMatcher: null,
@@ -195,18 +243,19 @@ let config = {
           // How can the coder indicate what part of this process needs
           // to be backed up?
           shouldBackUp:     true,
-          nextTestsToLoopThrough: null,
+          nextLoopTests: null,
         },
         noPipe: {
-          openType:           'noPipe',  // Needed?
-          wholeLineMatcher:   '\n',
+          openType:         'noPipe',  // Needed?
+          wholeLineMatcher: '\n',
+          tester:           '\n',
           // tokenStringMatcher: null,
           // Will require the module code to track how many chars to back up
           // to. Will it require going back multiple lines? If so, how?
           // How can the coder indicate what part of this process needs
           // to be backed up?
           shouldBackUp:     true,
-          nextTestsToLoopThrough: null,
+          nextLoopTests: null,
         },
       },  // ends closers
     },  // ends python
@@ -529,12 +578,12 @@ const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
     if ( typeof oneOpener.innerConfigName === 'string' ) {
       return oneOpener.innerConfigName;
 
-    } else if ( oneOpener.nextTestsToLoopThrough ) {
+    } else if ( oneOpener.nextLoopTests ) {
       innerConfigName = seekInnerMode({
         stream,
         state,
         tokenTypes,
-        openers: oneOpener.nextTestsToLoopThrough,
+        openers: oneOpener.nextLoopTests,
       });
     }
 
