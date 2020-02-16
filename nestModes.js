@@ -94,7 +94,7 @@ testerConfig
 1. Actual closer
 1. function returning others?
 
-maybe add state.configState
+maybe add state.originalConfig
 */
 
 // How can this deal with checking things like indentation?
@@ -146,7 +146,8 @@ let config = {
           },
           // These have to be run on each successive `.token()` call
           // They can't be looped in the same `.token()`
-          nextTokenTests: [//{
+          // nextTokenTests: [//{
+          openers: [//{
             // withPipe: {
             {
               innerConfigName:    null,
@@ -154,7 +155,8 @@ let config = {
               closerKey:          null,
               tester:             /^\s*code\s*:\s+\|\s*$/,
               tokenStringMatcher: null,
-              nextTokenTests: [//{
+              // nextTokenTests: [//{
+              openers: [//{
                 // What about: ifNotFound: 'end'/'invalid', 'loop' (to the end of the line)
                 // Or just always loop? I think you could always loop since the previous
                 // searches would know what was coming up...? But what if there are two of
@@ -176,7 +178,8 @@ let config = {
                     }
                     return false;
                   },
-                  nextTokenTests: [
+                  // nextTokenTests: [
+                  openers: [
                     {
                       innerConfigName:    'python',
                       tokenTypeMatcher:   'meta',
@@ -188,7 +191,8 @@ let config = {
                         }
                         return false;
                       },
-                      nextTokenTests: null,
+                      // nextTokenTests: null,
+                      openers: null,
                     },
                   ],
                 },
@@ -202,7 +206,8 @@ let config = {
               closerKey:          null,
               tester:             /^\s*code\s*:\s+\|\s*#.*$/,
               tokenStringMatcher: null,
-              nextTokenTests: [//{
+              // nextTokenTests: [//{
+              openers: [//{
                 // withPipeAndComment: {
                 {
                   innerConfigName:    'python',
@@ -211,7 +216,8 @@ let config = {
                   tester:             '\n',
                   // Allow '\n' this one too?
                   tokenStringMatcher: null,
-                  nextTokenTests: null,
+                  // nextTokenTests: null,
+                  openers: null,
                 },
               ],//},  // ends .next
             },
@@ -222,7 +228,8 @@ let config = {
               closerKey:          null,
               tester:             /^\s*code\s*:\s+[^\|][\s\S]+$/,
               tokenStringMatcher: null,
-              nextTokenTests: [//{
+              // nextTokenTests: [//{
+              openers: [//{
                 // noPipe: {
                 {
                   innerConfigName:    'python',
@@ -235,7 +242,8 @@ let config = {
                     }
                     return false;
                   }, 
-                  nextTokenTests: null,
+                  // nextTokenTests: null,
+                  openers: null,
                 },
               ],//},  // ends .nextTokenTests
             },  // ends `.noPipe` openers sub-types
@@ -405,6 +413,8 @@ CodeMirror.nestModes = function( config ) {
         isValidCodeBlock: false,
         hasPipe:          null,
         hasComment:       null,
+
+        originalConfig:   config,
       };
       return state;
     },
@@ -430,6 +440,8 @@ CodeMirror.nestModes = function( config ) {
         isValidCodeBlock: state.isValidCodeBlock,
         hasPipe:          state.hasPipe,
         hasComment:       state.hasComment,
+
+        originalConfig:   state.originalConfig,
       };
 
       // let mostRecent   = newState.prevConfigs[ newState.prevConfigs.length - 1 ];
