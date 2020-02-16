@@ -498,10 +498,19 @@ CodeMirror.nestModes = function( config ) {
         let tokenTypes   = state.activeMode.token( stream, state.activeState );
         let closeConfig = activeConfig.closers
         let closeTester = closeConfig[ state.closeKey ].wholeLineMatcher;
+        let newTester   = closeConfig[ state.closeKey ].tester;
 
         // Give them their state too
         if ( typeof closeTester === 'function' ) {
           closeTester = closeTester( stream, tokenTypes, config.state );
+          // todo: allow them to run their own test instead of
+          // returning regex or string? Check for bool?
+        }
+
+        let found = false;
+        // Give them their state too
+        if ( typeof newTester === 'function' ) {
+          found = newTester( stream, tokenTypes, config.state );
           // todo: allow them to run their own test instead of
           // returning regex or string? Check for bool?
         }
@@ -516,6 +525,11 @@ CodeMirror.nestModes = function( config ) {
           closeTester = new RegExp( closeTester );
         }
         
+        if ( typeof newTester === 'string' ) {
+          newTester = escapeRegExp( newTester );
+          newTester = new RegExp( newTester );
+        };
+
         // Now get a string. I know, I know. But this is the
         // easiest way I've found to test these various cases.
         // Can be flipped back and forth between RegExp and
@@ -535,6 +549,9 @@ CodeMirror.nestModes = function( config ) {
           let wholeLineStr  = stream.string;
           closeInner        = closeTester.test( wholeLineStr );
         }
+
+        // All except for newline match
+        console.log( closeInner, found );
 
         if ( closeInner ) {
           state.activeMode        = outerConfig.mode;
