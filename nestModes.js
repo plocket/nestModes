@@ -452,7 +452,7 @@ CodeMirror.nestModes = function( config ) {
         let wholeLineStr  = stream.string;
 
         let openers = activeConfig.openers;
-        seekInnerMode({ stream, state, tokenTypes, openers });
+        // seekInnerMode({ stream, state, tokenTypes, openers });
 
         let tokenIsAtom = atomTokenRegex.test( tokenTypes );
         let tokenIsMeta = metaTokenRegex.test( tokenTypes );
@@ -603,14 +603,12 @@ const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
 
     // Have a `tester` that is just a function that can
     // handle everything itself?
-    let matchedTokenTypes = matchesTokenType( tokenTypes, oneOpener.tokenTypeMatcher );
+    // let matchedTokenTypes = matchesTokenType( tokenTypes, oneOpener.tokenTypeMatcher );
+    // let matchedCurrString = true;
     let matchedWholeLine  = true;
-    let matchedCurrString = true;
 
     // If doesn't pass any tests, no inner mode found
-    if ( !matchedTokenTypes
-      && !matchedWholeLine
-      && !matchedCurrString ) {
+    if ( !matchedWholeLine ) {
       return null;
     }
 
