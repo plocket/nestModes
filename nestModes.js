@@ -122,7 +122,7 @@ let config = {
           tokenTypeMatcher:   'atom',
           // Just use the key of the parent? Or will they need
           // to use the same type multiple times?
-          closeKey:           null,
+          closerKey:          null,
           tokenStringMatcher: function ({ stream, tokenTypes, state }) {
             let regex       = /\s*code/;
             let currString  = stream.current();
@@ -151,7 +151,7 @@ let config = {
             {
               innerConfigName:    null,
               tokenTypeMatcher:   null,
-              closeKey:           null,
+              closerKey:          null,
               tester:             /^\s*code\s*:\s+\|\s*$/,
               tokenStringMatcher: null,
               nextTokenTests: [//{
@@ -168,7 +168,7 @@ let config = {
                 {
                   innerConfigName:    'python',
                   tokenTypeMatcher:   'meta',
-                  closeKey:           null,
+                  closerKey:          null,
                   tokenStringMatcher: /\s*\|\s*/,
                   tester: function ( stream, tokenType, state ) {
                     if ( /\bmeta\b/.test( tokenType )) {
@@ -180,7 +180,7 @@ let config = {
                     {
                       innerConfigName:    'python',
                       tokenTypeMatcher:   'meta',
-                      closeKey:           'withPipe',
+                      closerKey:          'withPipe',
                       tokenStringMatcher: /\s*\|\s*/,
                       tester: function ( stream, tokenType, state ) {
                         if ( /\bmeta\b/.test( tokenType )) {
@@ -199,7 +199,7 @@ let config = {
               // mode:               null,
               innerConfigName:    null,
               tokenTypeMatcher:   null,
-              closeKey:           null,
+              closerKey:          null,
               tester:             /^\s*code\s*:\s+\|\s*#.*$/,
               tokenStringMatcher: null,
               nextTokenTests: [//{
@@ -207,7 +207,7 @@ let config = {
                 {
                   innerConfigName:    'python',
                   tokenTypeMatcher:   null,
-                  closeKey:           'withPipeAndComment',
+                  closerKey:          'withPipeAndComment',
                   tester:             '\n',
                   // Allow '\n' this one too?
                   tokenStringMatcher: null,
@@ -219,7 +219,7 @@ let config = {
             {
               mode:               null,
               tokenTypeMatcher:   null,
-              closeKey:           null,
+              closerKey:          null,
               tester:             /^\s*code\s*:\s+[^\|][\s\S]+$/,
               tokenStringMatcher: null,
               nextTokenTests: [//{
@@ -227,7 +227,7 @@ let config = {
                 {
                   innerConfigName:    'python',
                   tokenTypeMatcher:   'meta',
-                  closeKey:           'noPipe',
+                  closerKey:          'noPipe',
                   tokenStringMatcher: /\s*:\s*/,
                   tester: function ( stream, tokenType, state ) {
                     if ( /\bmeta\b/.test( tokenType )) {
@@ -401,7 +401,7 @@ CodeMirror.nestModes = function( config ) {
         activeState:  startState,
         tester:       null,
 
-        closeKey:         null,
+        closerKey:        null,
         isValidCodeBlock: false,
         hasPipe:          null,
         hasComment:       null,
@@ -426,7 +426,7 @@ CodeMirror.nestModes = function( config ) {
         activeState:  CodeMirror.copyState( state.activeMode, state.activeState ),
         tester:       state.tester,
 
-        closeKey:         state.closeKey,
+        closerKey:        state.closerKey,
         isValidCodeBlock: state.isValidCodeBlock,
         hasPipe:          state.hasPipe,
         hasComment:       state.hasComment,
@@ -465,19 +465,19 @@ CodeMirror.nestModes = function( config ) {
           // Do these need to be lazy
           // Test if valid code block declaration and remember if has pipe or not
           if ( withPipeRegex.test( wholeLineStr )) {
-            state.closeKey          = 'withPipe';
+            state.closerKey         = 'withPipe';
             state.hasPipe           = true;
             state.hasComment        = false;
             state.isValidCodeBlock  = true;
             indentation = stream.indentation();
           } else if ( withPipeAndCommentRegex.test( wholeLineStr )) {
-            state.closeKey          = 'withPipeAndComment';
+            state.closerKey         = 'withPipeAndComment';
             state.hasPipe           = true;
             state.hasComment        = true;
             state.isValidCodeBlock  = true;
             indentation = stream.indentation();
           } else if ( noPipeRegex.test( wholeLineStr )) {
-            state.closeKey          = 'noPipe';
+            state.closerKey         = 'noPipe';
             state.hasPipe           = false;
             state.hasComment        = null;
             state.isValidCodeBlock  = true;
@@ -529,7 +529,7 @@ CodeMirror.nestModes = function( config ) {
         // Can't get `string.current` without getting the token
         let tokenTypes  = state.activeMode.token( stream, state.activeState );
         let closeConfig = activeConfig.closers
-        let closeTester = closeConfig[ state.closeKey ].tester;
+        let closeTester = closeConfig[ state.closerKey ].tester;
 
         let wasFound = false;
         // Give them their state too
@@ -583,7 +583,7 @@ CodeMirror.nestModes = function( config ) {
           state.isValidCodeBlock  = false;
           state.hasPipe           = null;
           state.hasComment        = null;
-          state.closeKey          = null;
+          state.closerKey         = null;
         }
 
         // If stopping python, `tokenTypes` won't matter because
