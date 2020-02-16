@@ -96,7 +96,7 @@ let config = {
           },
           // These have to be run on each successive `.token()` call
           // They can't be looped in the same `.token()`
-          nextLoopTests: [//{
+          nextTokenTests: [//{
             // withPipe: {
             {
               // mode:               null,
@@ -105,7 +105,7 @@ let config = {
               closeKey:           null,
               tester:             /^\s*code\s*:\s+\|\s*$/,
               tokenStringMatcher: null,
-              nextLoopTests: [//{
+              nextTokenTests: [//{
                 // What about: ifNotFound: 'end'/'invalid', 'loop' (to the end of the line)
                 // Or just always loop? I think you could always loop since the previous
                 // searches would know what was coming up...? But what if there are two of
@@ -120,14 +120,16 @@ let config = {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
                   innerConfigName:    'python',
                   tokenTypeMatcher:   'meta',
-                  closeKey:           'withPipe',
+                  // closeKey:           'withPipe',
+                  closeKey:           'withNull',
                   tokenStringMatcher: /\s*\|\s*/,
                   tester: function ( stream, tokenType, state ) {
                     if ( /\bmeta\b/.test( tokenType )) {
                       if ( /\s*\:\s*/.stream.current ) return true;
                     }
+                    return false;
                   },
-                  nextLoopTests: [
+                  nextTokenTests: [
                     {
                       // mode:               CodeMirror.getMode( {}, 'python' ),
                       innerConfigName:    'python',
@@ -138,8 +140,9 @@ let config = {
                         if ( /\bmeta\b/.test( tokenType )) {
                           if ( /\s*\|\s*/.stream.current ) return true;
                         }
+                        return false;
                       },
-                      nextLoopTests: null,
+                      nextTokenTests: null,
                     },
                   ],
                 },
@@ -153,7 +156,7 @@ let config = {
               closeKey:           null,
               tester:             /^\s*code\s*:\s+\|\s*#.*$/,
               tokenStringMatcher: null,
-              nextLoopTests: [//{
+              nextTokenTests: [//{
                 // withPipeAndComment: {
                 {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
@@ -163,7 +166,7 @@ let config = {
                   tester:             '\n',
                   // Allow '\n' this one too?
                   tokenStringMatcher: null,
-                  nextLoopTests: null,
+                  nextTokenTests: null,
                 },
               ],//},  // ends .next
             },
@@ -174,7 +177,7 @@ let config = {
               closeKey:           null,
               tester:             /^\s*code\s*:\s+[^\|][\s\S]+$/,
               tokenStringMatcher: null,
-              nextLoopTests: [//{
+              nextTokenTests: [//{
                 // noPipe: {
                 {
                   // mode:               CodeMirror.getMode( {}, 'python' ),
@@ -186,12 +189,13 @@ let config = {
                     if ( /\bmeta\b/.test( tokenType )) {
                       if ( /\s*:\s*/.test( stream.current )) return true;
                     }
+                    return false;
                   }, 
-                  nextLoopTests: null,
+                  nextTokenTests: null,
                 },
-              ],//},  // ends .nextLoopTests
+              ],//},  // ends .nextTokenTests
             },  // ends `.noPipe` openers sub-types
-          ],//},  // ends `.nextLoopTests` sub-types ('code' atom)
+          ],//},  // ends `.nextTokenTests` sub-types ('code' atom)
         },  // ends `.code` type
       ],//},  // ends openers
     },  // ends yaml
@@ -219,7 +223,7 @@ let config = {
           // How can the coder indicate what part of this process needs
           // to be backed up?
           shouldBackUp:    true,
-          nextLoopTests: null,
+          nextTokenTests: null,
         },
         withPipeAndComment: {
           openType:        'withPipeAndComment',  // Needed?
@@ -234,7 +238,7 @@ let config = {
           // How can the coder indicate what part of this process needs
           // to be backed up?
           shouldBackUp:     true,
-          nextLoopTests: null,
+          nextTokenTests: null,
         },
         noPipe: {
           openType:         'noPipe',  // Needed?
@@ -245,7 +249,7 @@ let config = {
           // How can the coder indicate what part of this process needs
           // to be backed up?
           shouldBackUp:     true,
-          nextLoopTests: null,
+          nextTokenTests: null,
         },
       },  // ends closers
     },  // ends python
@@ -399,13 +403,12 @@ CodeMirror.nestModes = function( config ) {
       if ( activeConfig.openers ) {
 
         // moves the parser forward
-        let tokenTypes     = state.activeMode.token( stream, state.activeState );
+        let tokenTypes    = state.activeMode.token( stream, state.activeState );
         let tokenStr      = stream.current();
         let wholeLineStr  = stream.string;
 
         let openers = activeConfig.openers;
         seekInnerMode({ stream, state, tokenTypes, openers });
-
 
         let tokenIsAtom = atomTokenRegex.test( tokenTypes );
         let tokenIsMeta = metaTokenRegex.test( tokenTypes );
@@ -571,12 +574,12 @@ const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
     if ( typeof oneOpener.innerConfigName === 'string' ) {
       return oneOpener.innerConfigName;
 
-    } else if ( oneOpener.nextLoopTests ) {
+    } else if ( oneOpener.nextTokenTests ) {
       innerConfigName = seekInnerMode({
         stream,
         state,
         tokenTypes,
-        openers: oneOpener.nextLoopTests,
+        openers: oneOpener.nextTokenTests,
       });
     }
 
