@@ -45,6 +45,58 @@ from inner mode
 1. maybe they have their own state object?
 */
 
+/*
+Options for things for dev func to return/be:
+1. string to match in whole line
+    Then there has to be a `closerKey`
+1. regex to test whole line
+    Then there has to be a `closerKey`
+1. bool
+    Then there has to be a `closerKey`
+1. array of test config objs to run on the next `.token()`
+    Named tests? Like closers are named?
+1. the `closerKey` itself...?
+    Then can't return a string to match in line and
+    that's not super intuitive.
+
+How to indicate it's passed the test and needs the closerKey?
+1. True and no further tests?
+1. Return a closer key?
+1. Have a closerKey prop?
+1. A flag?
+
+Can `closerKey` be `closerKeys`? Would they be:
+1. All run on one go to see which one(s) matched?
+    Could multiples match? How?
+1. Run on consecutive `.token()` calls?
+
+testerConfig
+.tester:
+1. > regex to match within whole line
+1. > string to match within whole line
+1. > function that returns a boolean
+.nextTokenTests (or maybe openers):
+1. > Array of testConfigs
+1. > null
+1. > function returning array of test configs?
+    Useful if person wants to keep testing new lines themselves
+    indefinitely
+.innerConfigKey
+1. > string
+1. > null
+1. regex?
+1. config?
+1. function returning others?
+.closerKey
+1. > string
+1. > null
+1. regex?
+1. Actual closer
+1. function returning others?
+
+maybe add state.configState
+*/
+
 // How can this deal with checking things like indentation?
 let indentation = 0; // or
 
