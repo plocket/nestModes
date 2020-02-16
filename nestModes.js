@@ -63,8 +63,6 @@ let config = {
         // code: {
         // python: {
         {
-          // mode here or bottom level of nesting?
-          // mode:               null,
           innerConfigName:    null,
           // Have just a tester that's a function
           // that can test everything?
@@ -99,7 +97,6 @@ let config = {
           nextTokenTests: [//{
             // withPipe: {
             {
-              // mode:               null,
               innerConfigName:    null,
               tokenTypeMatcher:   null,
               closeKey:           null,
@@ -115,13 +112,11 @@ let config = {
                 // recursively...? Maybe /\n*/ would do that? Or "\n*"? Maybe a multiline
                 // flag? How would _I_ be able to detect that in their regex? Is that even
                 // needed?
-                // Also, only loop for tokenStringMatcher r tokenTypeMatcher            // withPipe: {
+                // Also, only loop for tokenStringMatcher or tokenTypeMatcher            // withPipe: {
                 {
-                  // mode:               CodeMirror.getMode( {}, 'python' ),
                   innerConfigName:    'python',
                   tokenTypeMatcher:   'meta',
-                  // closeKey:           'withPipe',
-                  closeKey:           'withNull',
+                  closeKey:           null,
                   tokenStringMatcher: /\s*\|\s*/,
                   tester: function ( stream, tokenType, state ) {
                     if ( /\bmeta\b/.test( tokenType )) {
@@ -131,7 +126,6 @@ let config = {
                   },
                   nextTokenTests: [
                     {
-                      // mode:               CodeMirror.getMode( {}, 'python' ),
                       innerConfigName:    'python',
                       tokenTypeMatcher:   'meta',
                       closeKey:           'withPipe',
@@ -159,7 +153,6 @@ let config = {
               nextTokenTests: [//{
                 // withPipeAndComment: {
                 {
-                  // mode:               CodeMirror.getMode( {}, 'python' ),
                   innerConfigName:    'python',
                   tokenTypeMatcher:   null,
                   closeKey:           'withPipeAndComment',
@@ -180,7 +173,6 @@ let config = {
               nextTokenTests: [//{
                 // noPipe: {
                 {
-                  // mode:               CodeMirror.getMode( {}, 'python' ),
                   innerConfigName:    'python',
                   tokenTypeMatcher:   'meta',
                   closeKey:           'noPipe',
