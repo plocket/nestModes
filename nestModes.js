@@ -513,6 +513,24 @@ CodeMirror.nestModes = function( config ) {
           found = newTester( stream, tokenTypes, config.state );
           // todo: allow them to run their own test instead of
           // returning regex or string? Check for bool?
+        } else {
+          
+          if ( typeof newTester === 'string' ) {
+            newTester = escapeRegExp( newTester );
+            newTester = new RegExp( newTester );
+          };
+
+          let testerStr = closeTester.toString();
+
+          if ( /\\n/.test( testerStr ) || /\n/.test( testerStr )) {
+            if ( stream.eol() ) found = true;
+          
+          } else {
+            // Otherwise match the closing case normally
+            let wholeLineStr  = stream.string;
+            found             = newTester.test( wholeLineStr );
+          }
+
         }
 
         // Turn strings into a regular expression with proper escaping.
@@ -525,10 +543,6 @@ CodeMirror.nestModes = function( config ) {
           closeTester = new RegExp( closeTester );
         }
         
-        if ( typeof newTester === 'string' ) {
-          newTester = escapeRegExp( newTester );
-          newTester = new RegExp( newTester );
-        };
 
         // Now get a string. I know, I know. But this is the
         // easiest way I've found to test these various cases.
@@ -551,7 +565,7 @@ CodeMirror.nestModes = function( config ) {
         }
 
         // All except for newline match
-        console.log( closeInner, found );
+        console.log( closeInner === found );
 
         if ( closeInner ) {
           state.activeMode        = outerConfig.mode;
