@@ -539,51 +539,18 @@ CodeMirror.nestModes = function( config ) {
       } else if ( activeConfig.closers ) {
 
         // Can't get `string.current` without getting the token
-        let tokenTypes  = state.activeMode.token( stream, state.activeState );
-        let closeConfig = activeConfig.closers
-        let closeTester = closeConfig[ state.closerKey ].tester;
+        let tokenTypes    = state.activeMode.token( stream, state.activeState );
+        let closerConfig  = activeConfig.closers
+        let closerTester  = closerConfig[ state.closerKey ].tester;
 
-        let wasFound = false;
-        // Give them their state too
-        if ( typeof closeTester === 'function' ) {
-          wasFound = closeTester({ stream, tokenTypes, state: config.state });
-          // todo: allow them to run their own test instead of
-          // returning regex or string? Check for bool?
-        } else {
-          
-          // Turn strings into a regular expression with proper escaping.
-          // Not sure about this. What if they've made an already escaped string?
-          // Should this really be handled? But then why wouldn't they have just
-          // made it regex? Leave it for the docs?
-          // TODO: handle bool too?
-          if ( typeof closeTester === 'string' ) {
-            closeTester = escapeRegExp( closeTester );
-            closeTester = new RegExp( closeTester );
-          };
+        let shouldClose = passesTest({
+          stream,
+          tokenTypes,
+          test: closerTester,
+          state,
+        });
 
-          // Now get a string. I know, I know. But this is the
-          // easiest way I've wasFound to test these various cases.
-          // Can be flipped back and forth between RegExp and
-          // string with no problems. Weird. Anyway, have to turn
-          // this to a string to test its new-line-ness.
-          let testerStr = closeTester.toString();
-
-          // Deal with the idea of new line searchers
-          // considering codemirror evaluates one line at a time.
-          // How to make sure there's nothing after the new line, etc?
-          // i.e. ^\n or \n$ are fine, but if they do \nxyz then
-          // there's more checking to do. todo.
-          if ( /\\n/.test( testerStr ) || /\n/.test( testerStr )) {
-            if ( stream.eol() ) wasFound = true;
-          
-          } else {
-            // Otherwise match the closing case normally
-            let wholeLineStr  = stream.string;
-            wasFound          = closeTester.test( wholeLineStr );
-          }
-        }  // ends tester type
-
-        if ( wasFound ) {
+        if ( shouldClose ) {
           state.activeMode        = outerConfig.mode;
           state.activeState       = CodeMirror.startState( state.activeMode );
           state.activeConfig  = configsObj[ 'yaml' ];
@@ -611,18 +578,26 @@ CodeMirror.nestModes = function( config ) {
 const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
 
   let innerConfigName = null;
-  for ( let oneOpener of openers ) {
+  let newOpeners      = [];
 
+  for ( let oneOpener of openers ) {
+    let tester = oneOpener.tester;
     // Have a `tester` that is just a function that can
     // handle everything itself?
     // let matchedTokenTypes = matchesTokenType( tokenTypes, oneOpener.tokenTypeMatcher );
     // let matchedCurrString = true;
-    let matchedWholeLine  = true;
+    let matchedWholeLine  = false;
 
-    // If doesn't pass any tests, no inner mode found
-    if ( !matchedWholeLine ) {
-      return null;
-    }
+    // // todo: add warning to dev that they left their test out?
+    // if ( !doesTestExist( tester )) { yield; }
+    // if ( typeof tester === 'string' ) {
+
+    // }
+
+    // // If doesn't pass any tests, no inner mode found
+    // if ( !matchedWholeLine ) {
+    //   return null;
+    // }
 
     // todo: check for regex?
     if ( typeof oneOpener.innerConfigName === 'string' ) {
@@ -648,33 +623,86 @@ const doesTestExist = function ( test ) {
   return test !== null && test !== undefined;
 };
 
-const matchesTokenType = function ( tokenTypes, tokenTypeMatcher ) {
-  // What can `tokenTypes` be?
-  // Just an array? Of strings? Of regexps? A string
-  // of one or mutliple words separated by spaces?
-  // A function?
 
-  // If no tokenTypeMatcher then dev didn't define one,
-  // so skip over it.
-  let testExists = doesTestExist( tokenTypeMatcher );
-  if ( !testExists ) {
-    return true;
-  }
+const passesTest = function ({ stream, tokenTypes, test, state }) {
 
-  // The other functions return regex right now...
-  if ( typeof tokenTypeMatcher === 'function' ) {
-    return tokenTypeMatcher( tokenTypes );
-  }
+  let passes = false;
 
-  let matcherRegex = tokenTypeMatcher;
-  if ( typeof tokenTypeMatcher === 'string' ) {
-    // Could this really need escaping?
-    matcherRegex = new RegExp( `\\b${ escapeRegExp( tokenTypeMatcher )}\\b` );
-  }
+  if ( typeof test === 'function' ) {
 
-  let passesTest = matcherRegex.test( tokenTypes );
-  return passesTest;
-};  // Ends matchesTokenType()
+    passes = test({
+      stream,
+      tokenTypes,
+      state: state.originalConfig.state
+    });
+
+  } else {
+    let regex   = test;
+    let string  = null;
+
+    // Turn strings into a regular expression with proper escaping.
+    // Not sure about this. What if they've made an already escaped string?
+    // Should this really be handled? But then why wouldn't they have just
+    // made it regex? Leave it for the docs?
+    // TODO: handle bool too?
+    if ( typeof test === 'string' ) {
+      let escaped = escapeRegExp( test );
+      regex       = new RegExp( escaped );
+    };
+    // Now get a string. I know, I know. But this is the
+    // easiest way I've wasFound to test these various cases.
+    // Can be flipped back and forth between RegExp and
+    // string with no problems. Weird. Anyway, have to turn
+    // this to a string to test its new-line-ness.
+    string = regex.toString();
+
+    // Deal with the idea of new line searchers
+    // considering codemirror evaluates one line at a time.
+    // How to make sure there's nothing after the new line, etc?
+    // i.e. ^\n or \n$ are fine, but if they do \nxyz then
+    // there's more checking to do. todo.
+    if ( /\\n/.test( string ) || /\n/.test( string )) {
+      if ( stream.eol() ) passes = true;
+    
+    } else {
+      // Otherwise match the closing case normally
+      let wholeLine = stream.string;
+      passes        = regex.test( wholeLine );
+    }
+  }  // ends tester is function
+
+  return passes;
+
+};  // Ends passesTest()
+
+
+// const matchesTokenType = function ( tokenTypes, tokenTypeMatcher ) {
+//   // What can `tokenTypes` be?
+//   // Just an array? Of strings? Of regexps? A string
+//   // of one or mutliple words separated by spaces?
+//   // A function?
+
+//   // If no tokenTypeMatcher then dev didn't define one,
+//   // so skip over it.
+//   let testExists = doesTestExist( tokenTypeMatcher );
+//   if ( !testExists ) {
+//     return true;
+//   }
+
+//   // The other functions return regex right now...
+//   if ( typeof tokenTypeMatcher === 'function' ) {
+//     return tokenTypeMatcher( tokenTypes );
+//   }
+
+//   let matcherRegex = tokenTypeMatcher;
+//   if ( typeof tokenTypeMatcher === 'string' ) {
+//     // Could this really need escaping?
+//     matcherRegex = new RegExp( `\\b${ escapeRegExp( tokenTypeMatcher )}\\b` );
+//   }
+
+//   let passesTest = matcherRegex.test( tokenTypes );
+//   return passesTest;
+// };  // Ends matchesTokenType()
 
 // const didMatchWholeLine = function ( tokenTypes, wholeLine, tests ) {
 
