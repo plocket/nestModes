@@ -119,30 +119,34 @@ let config = {
           // Have just a tester that's a function
           // that can test everything?
           // If they want multiple, they can do nested tests
-          tokenTypeMatcher:   'atom',
+          // tokenTypeMatcher:   'atom',
           // Just use the key of the parent? Or will they need
           // to use the same type multiple times?
           closerKey:          null,
-          tokenStringMatcher: function ({ stream, tokenTypes, state }) {
-            let regex       = /\s*code/;
-            let currString  = stream.current();
-            let wasFound    = regex.test( currString );
-            if ( wasFound ) indentation = stream.indentation();
-            // or if we're doing this statefully
-            if ( wasFound ) state.indentation = stream.indentation();
-            return regex;
-            // return wasFound;
-          },  // /\s*code/
+          // tokenStringMatcher: function ({ stream, tokenTypes, state }) {
+          //   let regex       = /\s*code/;
+          //   let currString  = stream.current();
+          //   let wasFound    = regex.test( currString );
+          //   if ( wasFound ) indentation = stream.indentation();
+          //   // or if we're doing this statefully
+          //   if ( wasFound ) state.indentation = stream.indentation();
+          //   return regex;
+          //   // return wasFound;
+          // },  // /\s*code/
           // Add current string? Whole line? As separate arguments.
           tester: function ({ stream, tokenTypes, state }) {
-            let regex       = /\s*code/;
-            let currString  = stream.current();
-            let wasFound    = regex.test( currString );
-            if ( wasFound ) indentation = stream.indentation();
-            // or if we're doing this statefully
-            if ( wasFound ) state.indentation = stream.indentation();
-            return wasFound;
-            // return wasFound;
+            if ( /\batom\b/.test( tokenTypes )) {
+              let regex       = /\s*code/;
+              let currString  = stream.current();
+              let wasFound    = regex.test( currString );
+              if ( wasFound ) indentation = stream.indentation();
+              // or if we're doing this statefully
+              if ( wasFound ) state.indentation = stream.indentation();
+
+              return wasFound;
+            } else {
+              return false;
+            }
           },
           // These have to be run on each successive `.token()` call
           // They can't be looped in the same `.token()`
@@ -464,7 +468,7 @@ CodeMirror.nestModes = function( config ) {
         let wholeLineStr  = stream.string;
 
         let openers = activeConfig.openers;
-        // seekInnerMode({ stream, state, tokenTypes, openers });
+        seekInnerMode({ stream, state, tokenTypes, openers });
 
         let tokenIsAtom = atomTokenRegex.test( tokenTypes );
         let tokenIsMeta = metaTokenRegex.test( tokenTypes );
@@ -546,7 +550,7 @@ CodeMirror.nestModes = function( config ) {
         let shouldClose = passesTest({
           stream,
           tokenTypes,
-          test: closerTester,
+          tester: closerTester,
           state,
         });
 
@@ -578,7 +582,7 @@ CodeMirror.nestModes = function( config ) {
 const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
 
   let innerConfigName = null;
-  let newOpeners      = [];
+  let newOpeners      = [];  // accumulate _all_ possible openers?
 
   for ( let oneOpener of openers ) {
     let tester = oneOpener.tester;
@@ -586,7 +590,7 @@ const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
     // handle everything itself?
     // let matchedTokenTypes = matchesTokenType( tokenTypes, oneOpener.tokenTypeMatcher );
     // let matchedCurrString = true;
-    let matchedWholeLine  = false;
+    // let matchedWholeLine  = false;
 
     // // todo: add warning to dev that they left their test out?
     // if ( !doesTestExist( tester )) { yield; }
@@ -598,19 +602,28 @@ const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
     // if ( !matchedWholeLine ) {
     //   return null;
     // }
+    let shouldOpen = passesTest({
+      stream,
+      tokenTypes,
+      tester,
+      state,
+    });
+    console.log( stream.string, tokenTypes )
+    console.log( shouldOpen, oneOpener );
 
-    // todo: check for regex?
-    if ( typeof oneOpener.innerConfigName === 'string' ) {
-      return oneOpener.innerConfigName;
 
-    } else if ( oneOpener.nextTokenTests ) {
-      innerConfigName = seekInnerMode({
-        stream,
-        state,
-        tokenTypes,
-        openers: oneOpener.nextTokenTests,
-      });
-    }
+    // // todo: check for regex?
+    // if ( typeof oneOpener.innerConfigName === 'string' ) {
+    //   return oneOpener.innerConfigName;
+
+    // } else if ( oneOpener.nextTokenTests ) {
+    //   innerConfigName = seekInnerMode({
+    //     stream,
+    //     state,
+    //     tokenTypes,
+    //     openers: oneOpener.nextTokenTests,
+    //   });
+    // }
 
     // if not null, break?
   }  // ends for all openers
@@ -624,20 +637,20 @@ const doesTestExist = function ( test ) {
 };
 
 
-const passesTest = function ({ stream, tokenTypes, test, state }) {
+const passesTest = function ({ stream, tokenTypes, tester, state }) {
 
   let passes = false;
 
-  if ( typeof test === 'function' ) {
+  if ( typeof tester === 'function' ) {
 
-    passes = test({
+    passes = tester({
       stream,
       tokenTypes,
       state: state.originalConfig.state
     });
 
   } else {
-    let regex   = test;
+    let regex   = tester;
     let string  = null;
 
     // Turn strings into a regular expression with proper escaping.
@@ -645,8 +658,8 @@ const passesTest = function ({ stream, tokenTypes, test, state }) {
     // Should this really be handled? But then why wouldn't they have just
     // made it regex? Leave it for the docs?
     // TODO: handle bool too?
-    if ( typeof test === 'string' ) {
-      let escaped = escapeRegExp( test );
+    if ( typeof tester === 'string' ) {
+      let escaped = escapeRegExp( tester );
       regex       = new RegExp( escaped );
     };
     // Now get a string. I know, I know. But this is the
