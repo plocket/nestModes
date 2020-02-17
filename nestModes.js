@@ -470,7 +470,15 @@ CodeMirror.nestModes = function( config ) {
         let openers = null;
         if ( state.openers ) openers = state.openers;
         else openers = activeConfig.openers;
-        seekInnerMode({ stream, state, tokenTypes, openers });
+        let nextStep = seekInnerMode({ stream, state, tokenTypes, openers });
+        // If we got to the very bottom of a set of tests, that
+        // process wins. todo: assess need for explicit hierarchy setting.
+        if ( nextStep.key ) {
+          // let newConfig = 
+        }
+
+
+        // When opener tests all fail, go back to the first opener
 
         let tokenIsAtom = atomTokenRegex.test( tokenTypes );
         let tokenIsMeta = metaTokenRegex.test( tokenTypes );
@@ -583,9 +591,10 @@ CodeMirror.nestModes = function( config ) {
 
 const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
 
-  let innerConfigName = null;
-  let newOpeners      = [];  // accumulate _all_ possible openers?
+  // accumulate _all_ possible openers?
+  let nextStep = { key: null, openers: [] };
 
+  // Testing for multiple types of matches
   for ( let oneOpener of openers ) {
 
     let tester = oneOpener.tester;
@@ -596,26 +605,22 @@ const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
       state,
     });
 
+    // If we need to dig deeper into these tests
     if ( shouldOpenMore ) {
 
-    }
-    // // todo: check for regex?
-    // if ( typeof oneOpener.innerConfigName === 'string' ) {
-    //   return oneOpener.innerConfigName;
+      if ( oneOpener.innerConfigName ) {
+        // Stop on first config name found
+        return { key: oneOpener.innerConfigName };
+      }
 
-    // } else if ( oneOpener.nextTokenTests ) {
-    //   innerConfigName = seekInnerMode({
-    //     stream,
-    //     state,
-    //     tokenTypes,
-    //     openers: oneOpener.nextTokenTests,
-    //   });
-    // }
+      if ( oneOpener.openers ) nextStep.openers.push( oneOpener.openers );
+    }
 
     // if not null, break?
   }  // ends for all openers
 
-  return innerConfigName;
+  console.log( nextStep );
+  return nextStep;
 
 };  // Ends seekInnerMode()
 
