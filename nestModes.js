@@ -411,7 +411,7 @@ CodeMirror.nestModes = function( config ) {
         activeConfig: outerConfig,
         activeMode:   startMode,
         activeState:  startState,
-        tester:       null,
+        openers:      null,
 
         closerKey:        null,
         isValidCodeBlock: false,
@@ -438,7 +438,7 @@ CodeMirror.nestModes = function( config ) {
         activeConfig: active,
         activeMode:   state.activeMode,
         activeState:  CodeMirror.copyState( state.activeMode, state.activeState ),
-        tester:       state.tester,
+        openers:      state.openers,
 
         closerKey:        state.closerKey,
         isValidCodeBlock: state.isValidCodeBlock,
@@ -467,7 +467,9 @@ CodeMirror.nestModes = function( config ) {
         let tokenStr      = stream.current();
         let wholeLineStr  = stream.string;
 
-        let openers = activeConfig.openers;
+        let openers = null;
+        if ( state.openers ) openers = state.openers;
+        else openers = activeConfig.openers;
         seekInnerMode({ stream, state, tokenTypes, openers });
 
         let tokenIsAtom = atomTokenRegex.test( tokenTypes );
@@ -602,16 +604,18 @@ const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
     // if ( !matchedWholeLine ) {
     //   return null;
     // }
-    let shouldOpen = passesTest({
+    let shouldOpenMore = passesTest({
       stream,
       tokenTypes,
       tester,
       state,
     });
     console.log( stream.string, tokenTypes )
-    console.log( shouldOpen, oneOpener );
+    console.log( shouldOpenMore, oneOpener );
 
+    if ( shouldOpenMore ) {
 
+    }
     // // todo: check for regex?
     // if ( typeof oneOpener.innerConfigName === 'string' ) {
     //   return oneOpener.innerConfigName;
