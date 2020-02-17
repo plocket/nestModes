@@ -675,41 +675,4 @@ const passesTest = function ({ stream, tokenTypes, test, state }) {
 
 };  // Ends passesTest()
 
-
-// const matchesTokenType = function ( tokenTypes, tokenTypeMatcher ) {
-//   // What can `tokenTypes` be?
-//   // Just an array? Of strings? Of regexps? A string
-//   // of one or mutliple words separated by spaces?
-//   // A function?
-
-//   // If no tokenTypeMatcher then dev didn't define one,
-//   // so skip over it.
-//   let testExists = doesTestExist( tokenTypeMatcher );
-//   if ( !testExists ) {
-//     return true;
-//   }
-
-//   // The other functions return regex right now...
-//   if ( typeof tokenTypeMatcher === 'function' ) {
-//     return tokenTypeMatcher( tokenTypes );
-//   }
-
-//   let matcherRegex = tokenTypeMatcher;
-//   if ( typeof tokenTypeMatcher === 'string' ) {
-//     // Could this really need escaping?
-//     matcherRegex = new RegExp( `\\b${ escapeRegExp( tokenTypeMatcher )}\\b` );
-//   }
-
-//   let passesTest = matcherRegex.test( tokenTypes );
-//   return passesTest;
-// };  // Ends matchesTokenType()
-
-// const didMatchWholeLine = function ( tokenTypes, wholeLine, tests ) {
-
-// };  // Ends didMatchWholeLine()
-
-// const didMatchCurrString = function ( tokenTypes, currString, tests ) {
-
-// };  // Ends didMatchCurrString()
-
 });
