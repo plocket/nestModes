@@ -587,31 +587,14 @@ const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
   let newOpeners      = [];  // accumulate _all_ possible openers?
 
   for ( let oneOpener of openers ) {
+
     let tester = oneOpener.tester;
-    // Have a `tester` that is just a function that can
-    // handle everything itself?
-    // let matchedTokenTypes = matchesTokenType( tokenTypes, oneOpener.tokenTypeMatcher );
-    // let matchedCurrString = true;
-    // let matchedWholeLine  = false;
-
-    // // todo: add warning to dev that they left their test out?
-    // if ( !doesTestExist( tester )) { yield; }
-    // if ( typeof tester === 'string' ) {
-
-    // }
-
-    // // If doesn't pass any tests, no inner mode found
-    // if ( !matchedWholeLine ) {
-    //   return null;
-    // }
     let shouldOpenMore = passesTest({
       stream,
       tokenTypes,
       tester,
       state,
     });
-    console.log( stream.string, tokenTypes )
-    console.log( shouldOpenMore, oneOpener );
 
     if ( shouldOpenMore ) {
 
