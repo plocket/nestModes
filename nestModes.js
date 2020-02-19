@@ -473,8 +473,9 @@ CodeMirror.nestModes = function( config ) {
         let nextStep = seekInnerMode({ stream, state, tokenTypes, openers });
         // If we got to the very bottom of a set of tests, that
         // process wins. todo: assess need for explicit hierarchy setting.
-        if ( nextStep.key && state.originalConfig[ nextStep.key ] ) {
+        if ( nextStep.key && state.originalConfig[ nextStep.key ]) {
           let newConfig = state.originalConfig[ nextStep.key ];
+
         } else if ( nextStep.openers && nextStep.openers.length > 0 ) {
           state.openers = nextStep.openers;
         } else {
@@ -612,8 +613,10 @@ const seekInnerMode = function ({ stream, state, tokenTypes, openers }) {
     // If we need to dig deeper into these tests
     if ( shouldOpenMore ) {
 
+      console.log(oneOpener);
       if ( oneOpener.innerConfigName ) {
         // Stop on first config name found
+        oneOpener.innerConfigName;
         return { key: oneOpener.innerConfigName };
       }
 
